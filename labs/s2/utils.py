@@ -13,9 +13,6 @@ def read_dataset():
         print(f'[{idx:2}/{len(files)}] Reading {name} dataset...')
 
         with open(path, mode='r') as f:
-            content = '\n'.join(f.readlines())
-
-            f = StringIO(content)
             data, meta = arff.loadarff(f)
 
             dataset[name] = {'data': data, 'meta': meta}
