@@ -1,10 +1,10 @@
+from collections import Counter
 from glob import glob
-from io import StringIO
 
 from scipy.io import arff
 
 
-def read_dataset():
+def read_dataset(verbose=False):
     dataset = {}
 
     files = sorted(glob('datasets/*.arff'))
@@ -17,4 +17,13 @@ def read_dataset():
 
             dataset[name] = {'data': data, 'meta': meta}
 
+        if verbose:
+            counter = Counter(meta.types()).items()
+            for c, t in counter:
+                print(f'\t- {c} {t}')
+
     return dataset
+
+
+if __name__ == '__main__':
+    read_dataset(verbose=True)
