@@ -1,25 +1,36 @@
-import colorsys
-import time
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.spatial import distance
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 
 
 class KMeans:
-    def __init__(self, K, seed=1, visualize=False):
-        print('KMeans')
+    """
+
+    """
+
+    def __init__(self, K: int, seed=1, vis_dims=0):
+        """
+
+        :param K: Number of Clusters
+        :param seed: Fixed seed to allow reproducibility.
+        :param vis_dims: Visualization level (0 no visualization, 2 for 2D and 3 for 3D).
+        """
+        assert K > 0, 'K must be a positive number > 0'
+        assert vis_dims in [0, 2, 3], 'visualize must be an integer in {0, 2, 3}'
+
         self.K = K
         self.seed = seed
-        self.visualize = visualize
+        self.vis_dims = vis_dims
 
         self.X = None
         self.centroids = None
 
-        colors = [(x * 1.0 / K, x * 1.0 / K, 0.5) for x in range(K)]
-        self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), colors))
-        self.colors = [plt.cm.hsv(x / K) for x in range(K)]
+        self.colors = self._get_colors(K)
         self.dist_params = {}
 
     def fit(self, X: np.ndarray, max_it=20):
@@ -48,7 +59,7 @@ class KMeans:
                 nearest[min_index].append(point)
                 nearest_idx[min_index].append(p_idx)
 
-            if self.visualize:
+            if self.vis_dims:
                 self._display_iteration(X, nearest_idx)
 
             # Recalculate centroids as the mean of their nearest points
@@ -61,21 +72,12 @@ class KMeans:
             else:
                 previous_nearest_idx = nearest_idx
 
-            time.sleep(1)
-
-    def _compute_centroids(self, nearest):
-        # TODO: Ugly AF
-        self.centroids = np.array(list(map(lambda x: np.mean(np.array(x), axis=0), nearest)))
-
     def predict(self, X):
         # Calculate distance from each point to each cluster
         distances = np.zeros(shape=(self.K, X.shape[0]))
         for c_idx, centroid in enumerate(self.centroids):
             for p_idx, point in enumerate(X):
                 distances[c_idx, p_idx] = self._distance(centroid, point, **self.dist_params)
-
-        # Get nearest points for each cluster
-        nearest = [[] for _ in range(self.K)]
 
         classes = []
         for p_idx, point in enumerate(X):
@@ -91,28 +93,83 @@ class KMeans:
     def _init_centroids(self):
         self.centroids = np.random.random(size=(self.K, self.X.shape[1]))
 
+    def _compute_centroids(self, nearest):
+        # TODO: Ugly AF
+        self.centroids = np.array(list(map(lambda x: np.mean(np.array(x), axis=0), nearest)))
+
     def _display_iteration(self, X, nearest_idx):
-        plt.figure(figsize=(4, 4))
-        for idx in range(self.K):
-            plt.scatter(X[nearest_idx[idx], 0], X[nearest_idx[idx], 1],
-                        c=[self.colors[idx]], s=10, alpha=0.5)
-            plt.scatter(self.centroids[idx, 0], self.centroids[idx, 1],
-                        c=[self.colors[idx]], s=150, marker='*', edgecolors='black')
+        """
+        Visualize a plot for the current iteration centroids and point assignments.
+        :param X: 2D vector with the set of points of size (instances, features).
+        :param nearest_idx: List of size (K, ?) assigning each point to its nearest cluster.
+        """
+        points = X.copy()
+        centroids = self.centroids.copy()
+
+        data_components = points.shape[1]
+        if data_components > self.vis_dims:
+            pca = PCA(n_components=self.vis_dims)
+            points = pca.fit_transform(points)
+            centroids = pca.transform(centroids)
+
+        f = plt.figure(figsize=(4, 4))
+
+        # Visualization for 3D
+        if self.vis_dims == 3:
+            ax = Axes3D(f)
+            for k in range(self.K):
+                # Plot centroid k
+                ax.scatter(xs=centroids[k, 0], ys=centroids[k, 1], zs=centroids[k, 2],
+                           c=[self.colors[k]], s=150, marker='*', edgecolors='black')
+
+                # Plot points associated with cluster k
+                ax.scatter(xs=points[nearest_idx[k], 0], ys=points[nearest_idx[k], 1], zs=points[nearest_idx[k], 2],
+                           c=[self.colors[k]], s=10, alpha=0.5)
+
+        # Visualization for 2D
+        else:
+            for k in range(self.K):
+                # Plot centroid k
+                plt.scatter(x=centroids[k, 0], y=centroids[k, 1],
+                            c=[self.colors[k]], s=150, marker='*', edgecolors='black')
+
+                # Plot points associated with cluster k
+                plt.scatter(x=points[nearest_idx[k], 0], y=points[nearest_idx[k], 1],
+                            c=[self.colors[k]], s=10, alpha=0.5)
+
         plt.show()
 
     @staticmethod
-    def _distance(a, b, **kwargs):
-        return np.linalg.norm(a - b)
+    def _get_colors(n):
+        """
+        Sample RGBA colors from HSV matplotlib colormap.
+        :param n: Number of colors to obtain.
+        :return: List of n RGBA colors.
+        """
+        return [plt.cm.hsv(x / n) for x in range(n)]
 
+    @staticmethod
+    def _distance(a: np.ndarray, b: np.ndarray, metric='euclidean', **kwargs) -> float:
+        """
+        Compute distance between 2 elements using the specified metric. Check metrics in:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
+        :param a: 1D vector with all A attributes.
+        :param b: 1D vector with all B attributes.
+        :param metric: Distance function to use (e.g. euclidean, cosine...).
+        :param kwargs:
+        :return:
+        """
+        # return distance.cdist(np.array(a), np.array(b), metric=metric)[0][0]
+        return np.linalg.norm(a - b)
 
 
 if __name__ == '__main__':
     dataset = pd.read_csv('Mall_Customers.csv')
     dataset.describe()
-    X = dataset.iloc[:, [3, 4]].values
-    
+    dataset = dataset.iloc[:, [0, 2, 3, 4]].values
+
     scaler = MinMaxScaler()
-    X = scaler.fit_transform(X)
-    
-    kmeans = KMeans(3)
-    kmeans.fit_transform(X)
+    dataset = scaler.fit_transform(dataset)
+
+    kmeans = KMeans(5, vis_dims=0)
+    kmeans.fit_predict(dataset)

@@ -11,14 +11,12 @@ class KModes(KMeans):
         self.centroids = self.X[idx]
 
     def _compute_centroids(self, nearest):
-        # self.centroids = np.array(list(map(lambda x: np.mean(np.array(x), axis=0), nearest)))
-
         for k in range(self.K):
             if nearest[k]:
                 self.centroids[k, :] = stats.mode(nearest[k]).mode[0]
 
     @staticmethod
-    def _distance(a, b,  **kwargs):
+    def _distance(a, b, **kwargs):
         # delta kronecker (0 if ==, else 1)
         return np.sum(a != b)
 
