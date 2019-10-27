@@ -13,19 +13,23 @@ class KMeans:
 
     """
 
-    def __init__(self, K: int, seed=1, vis_dims=0):
+    def __init__(self, K: int, metric='euclidean', vis_dims=0, seed=1):
         """
 
         :param K: Number of Clusters
-        :param seed: Fixed seed to allow reproducibility.
+        :param metric: Distance function
         :param vis_dims: Visualization level (0 no visualization, 2 for 2D and 3 for 3D).
+        :param seed: Fixed seed to allow reproducibility.
         """
         assert K > 0, 'K must be a positive number > 0'
         assert vis_dims in [0, 2, 3], 'visualize must be an integer in {0, 2, 3}'
+        assert metric in ['euclidean', 'cityblock', 'cosine'], \
+            'accepted metrics are euclidean, manhattan and cosine distances'
 
         self.K = K
-        self.seed = seed
+        self.metric = metric
         self.vis_dims = vis_dims
+        self.seed = seed
 
         self.X = None
         self.centroids = None
@@ -119,22 +123,30 @@ class KMeans:
             ax = Axes3D(f)
             for k in range(self.K):
                 # Plot centroid k
-                ax.scatter(xs=centroids[k, 0], ys=centroids[k, 1], zs=centroids[k, 2],
-                           c=[self.colors[k]], s=150, marker='*', edgecolors='black')
+                ax.scatter(xs=centroids[k, 0],
+                           ys=centroids[k, 1],
+                           zs=centroids[k, 2],
+                           c=[self.colors[k]], s=150,
+                           marker='*', edgecolors='black')
 
                 # Plot points associated with cluster k
-                ax.scatter(xs=points[nearest_idx[k], 0], ys=points[nearest_idx[k], 1], zs=points[nearest_idx[k], 2],
+                ax.scatter(xs=points[nearest_idx[k], 0],
+                           ys=points[nearest_idx[k], 1],
+                           zs=points[nearest_idx[k], 2],
                            c=[self.colors[k]], s=10, alpha=0.5)
 
         # Visualization for 2D
         else:
             for k in range(self.K):
                 # Plot centroid k
-                plt.scatter(x=centroids[k, 0], y=centroids[k, 1],
-                            c=[self.colors[k]], s=150, marker='*', edgecolors='black')
+                plt.scatter(x=centroids[k, 0],
+                            y=centroids[k, 1],
+                            c=[self.colors[k]], s=150,
+                            marker='*', edgecolors='black')
 
                 # Plot points associated with cluster k
-                plt.scatter(x=points[nearest_idx[k], 0], y=points[nearest_idx[k], 1],
+                plt.scatter(x=points[nearest_idx[k], 0],
+                            y=points[nearest_idx[k], 1],
                             c=[self.colors[k]], s=10, alpha=0.5)
 
         plt.show()
@@ -148,28 +160,25 @@ class KMeans:
         """
         return [plt.cm.hsv(x / n) for x in range(n)]
 
-    @staticmethod
-    def _distance(a: np.ndarray, b: np.ndarray, metric='euclidean', **kwargs) -> float:
+    def _distance(self, a: np.ndarray, b: np.ndarray, **kwargs) -> float:
         """
         Compute distance between 2 elements using the specified metric. Check metrics in:
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
         :param a: 1D vector with all A attributes.
         :param b: 1D vector with all B attributes.
-        :param metric: Distance function to use (e.g. euclidean, cosine...).
         :param kwargs:
         :return:
         """
-        # return distance.cdist(np.array(a), np.array(b), metric=metric)[0][0]
-        return np.linalg.norm(a - b)
+        return distance.cdist(np.array([a]), np.array([b]), metric=self.metric)[0][0]
 
 
 if __name__ == '__main__':
     dataset = pd.read_csv('Mall_Customers.csv')
     dataset.describe()
-    dataset = dataset.iloc[:, [0, 2, 3, 4]].values
+    dataset = dataset.iloc[:, [2, 4]].values
 
     scaler = MinMaxScaler()
     dataset = scaler.fit_transform(dataset)
 
-    kmeans = KMeans(5, vis_dims=0)
+    kmeans = KMeans(K=5, metric='cosine', vis_dims=2)
     kmeans.fit_predict(dataset)
