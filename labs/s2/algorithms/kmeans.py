@@ -35,7 +35,6 @@ class KMeans:
         self.centroids = None
 
         self.colors = self._get_colors(K)
-        self.dist_params = {}
 
     def fit(self, X: np.ndarray, max_it=20):
         np.random.seed(self.seed)
@@ -52,7 +51,7 @@ class KMeans:
             distances = np.zeros(shape=(self.K, X.shape[0]))
             for c_idx, centroid in enumerate(self.centroids):
                 for p_idx, point in enumerate(X):
-                    distances[c_idx, p_idx] = self._distance(centroid, point, **self.dist_params)
+                    distances[c_idx, p_idx] = self._distance(centroid, point)
 
             # Get nearest points for each cluster
             nearest = [[] for _ in range(self.K)]
@@ -81,7 +80,7 @@ class KMeans:
         distances = np.zeros(shape=(self.K, X.shape[0]))
         for c_idx, centroid in enumerate(self.centroids):
             for p_idx, point in enumerate(X):
-                distances[c_idx, p_idx] = self._distance(centroid, point, **self.dist_params)
+                distances[c_idx, p_idx] = self._distance(centroid, point)
 
         classes = []
         for p_idx, point in enumerate(X):
@@ -151,6 +150,16 @@ class KMeans:
 
         plt.show()
 
+    def _distance(self, a: np.ndarray, b: np.ndarray) -> float:
+        """
+        Compute distance between 2 elements using the specified metric. Check metrics in:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
+        :param a: 1D vector with all A attributes.
+        :param b: 1D vector with all B attributes.
+        :return:
+        """
+        return distance.cdist(np.array([a]), np.array([b]), metric=self.metric)[0][0]
+
     @staticmethod
     def _get_colors(n):
         """
@@ -159,17 +168,6 @@ class KMeans:
         :return: List of n RGBA colors.
         """
         return [plt.cm.hsv(x / n) for x in range(n)]
-
-    def _distance(self, a: np.ndarray, b: np.ndarray, **kwargs) -> float:
-        """
-        Compute distance between 2 elements using the specified metric. Check metrics in:
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
-        :param a: 1D vector with all A attributes.
-        :param b: 1D vector with all B attributes.
-        :param kwargs:
-        :return:
-        """
-        return distance.cdist(np.array([a]), np.array([b]), metric=self.metric)[0][0]
 
 
 if __name__ == '__main__':
