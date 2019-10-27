@@ -20,6 +20,7 @@ class KMeans:
         colors = [(x * 1.0 / K, x * 1.0 / K, 0.5) for x in range(K)]
         self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), colors))
         self.colors = [plt.cm.hsv(x / K) for x in range(K)]
+        self.dist_params = {}
 
     def fit(self, X: np.ndarray, max_it=20):
         np.random.seed(self.seed)
@@ -36,7 +37,7 @@ class KMeans:
             distances = np.zeros(shape=(self.K, X.shape[0]))
             for c_idx, centroid in enumerate(self.centroids):
                 for p_idx, point in enumerate(X):
-                    distances[c_idx, p_idx] = self._distance(centroid, point)
+                    distances[c_idx, p_idx] = self._distance(centroid, point, **self.dist_params)
 
             # Get nearest points for each cluster
             nearest = [[] for _ in range(self.K)]
@@ -71,7 +72,7 @@ class KMeans:
         distances = np.zeros(shape=(self.K, X.shape[0]))
         for c_idx, centroid in enumerate(self.centroids):
             for p_idx, point in enumerate(X):
-                distances[c_idx, p_idx] = self._distance(centroid, point)
+                distances[c_idx, p_idx] = self._distance(centroid, point, **self.dist_params)
 
         # Get nearest points for each cluster
         nearest = [[] for _ in range(self.K)]
@@ -100,11 +101,11 @@ class KMeans:
         plt.show()
 
     @staticmethod
-    def _distance(a, b):
+    def _distance(a, b, **kwargs):
         return np.linalg.norm(a - b)
 
 
-"""
+
 if __name__ == '__main__':
     dataset = pd.read_csv('Mall_Customers.csv')
     dataset.describe()
@@ -115,4 +116,3 @@ if __name__ == '__main__':
     
     kmeans = KMeans(3)
     kmeans.fit_transform(X)
-"""

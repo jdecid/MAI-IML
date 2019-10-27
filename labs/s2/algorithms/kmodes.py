@@ -18,7 +18,7 @@ class KModes(KMeans):
                 self.centroids[k, :] = stats.mode(nearest[k]).mode[0]
 
     @staticmethod
-    def _distance(a, b):
+    def _distance(a, b,  **kwargs):
         # delta kronecker (0 if ==, else 1)
         return np.sum(a != b)
 
