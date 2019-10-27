@@ -49,7 +49,7 @@ def filter_datasets_by_attributes_type(dataset, tp):
 
 if __name__ == '__main__':
     def main():
-        dataset = read_dataset()
+        read_dataset()
 
 
     main()
