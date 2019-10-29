@@ -1,16 +1,19 @@
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
 from algorithms.kmeans import KMeans
 
 
 class FuzzyCMeans(KMeans):
-    def __init__(self, C: int, m: int):
+    def __init__(self, C: int, m: int, vis_dims: int):
         """
 
         :param C: Number of Clusters
         :param m: Degree of fuzziness (1 - crisp)
         """
-        super().__init__(K=C)
+        super().__init__(K=C, vis_dims=vis_dims)
         self.m = m
 
     def _init_centroids(self):
@@ -23,7 +26,7 @@ class FuzzyCMeans(KMeans):
 
     def _update_u(self, X: np.ndarray):
         # TODO: Remove
-        self.centroids = np.random.random(size=(self.K, X.shape[1]))
+        # self.centroids = np.random.random(size=(self.K, X.shape[1]))
 
         print(self.u, self.u.shape, '\n')
 
@@ -43,9 +46,9 @@ class FuzzyCMeans(KMeans):
 
         print(self.u, self.u.shape, '\n')
 
-    def _update_centroids(self, X):
+    def _compute_centroids(self, X):
         # TODO: Remove
-        self.centroids = np.random.random(size=(self.K, X.shape[1]))
+        # self.centroids = np.random.random(size=(self.K, X.shape[1]))
 
         # for i in range(self.K):
         #     u_pow_m = self.u[i, :] ** self.m
@@ -60,11 +63,33 @@ class FuzzyCMeans(KMeans):
         # print(self.centroids, self.centroids.shape, '\n')
         # print(self.centroids2, self.centroids2.shape, '\n')
 
+    def _display_iteration(self, X, nearest_idx):
+        if self.vis_dims == 0:
+            return
+
+        f, ax = plt.subplots(self.K, 1, figsize=(self.K, 6))
+
+        colors = self._get_colors(4)
+        ax[0].set_title('Membership Functions')
+
+        for idx in range(self.K):
+            ax[idx].plot(self.u[idx, :], c=colors[idx])
+            ax[idx].tick_params(labelsize=6)
+            ax[idx].set_ylim((0, 1))
+
+        plt.show()
+
 
 if __name__ == '__main__':
-    np.random.seed(1)
-    fcm = FuzzyCMeans(C=3, m=2)
-    X = np.random.random(size=(10, 4))
-    fcm._init_u(X.shape[0])
-    # fcm._update_centroids(X)
-    fcm._update_u(X)
+    dataset = pd.read_csv('../tests/datasets/Mall_Customers.csv')
+    dataset.describe()
+    dataset = dataset.iloc[:, [2, 3, 4]].values
+
+    sc = MinMaxScaler()
+    dataset = sc.fit_transform(dataset)
+
+    fcm = FuzzyCMeans(C=4, m=2, vis_dims=2)
+    # kmeans.fit_predict(dataset)
+    fcm.X = dataset
+    fcm._init_u()
+    fcm._display_iteration(dataset, None)
