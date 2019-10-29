@@ -1,9 +1,11 @@
+import collections
+
 import numpy as np
 import pandas as pd
-
 from scipy import stats
+
 from algorithms.kmeans import KMeans
-import collections
+
 
 class KModes(KMeans):
     def __init__(self, K: int, seed=1):
@@ -24,22 +26,26 @@ class KModes(KMeans):
             if nearest[k]:
                 self.centroids[k, :] = stats.mode(nearest[k]).mode[0]
 
-    def _distance(self, a, b):
-        # delta kronecker (0 if ==, else 1)
-        return np.sum(a != b)
+    def _distance(self, a: np.ndarray, b: np.ndarray) -> float:
+        """
+        Compute distance between two points using Kronecker's delta (1 if the values are equal, and 0 otherwise)
+        :param a: 1D vector with all A attributes.
+        :param b: 1D vector with all B attributes.
+        :return: Distance (dissimilarity) between a and b.
+        """
+        return sum(a != b)
 
 
 if __name__ == '__main__':
     dataset = pd.read_csv('../datasets/car.data')
-    X = dataset.iloc[:,:6]
+    X = dataset.iloc[:, :6]
 
-    kmodes = KModes(K=4,seed=1)
+    kmodes = KModes(K=4, seed=1)
     res = kmodes.fit_predict(X.values)
     with open('res.txt', 'w') as f:
         f.write(str(res))
     c = collections.Counter()
     c.update(res)
     print(c)
-    Y = dataset.iloc[:,6]
+    Y = dataset.iloc[:, 6]
     print(Y.value_counts())
-
