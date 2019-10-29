@@ -22,4 +22,4 @@ def evaluate_unsupervised(X, labels):
 def evaluate(labels_true, labels_pred, X):
     eval_sup = evaluate_supervised(labels_true, labels_pred)
     eval_unsup = evaluate_unsupervised(X, labels_pred)
-    return eval_sup, eval_unsup
+    return dict(eval_sup=eval_sup, eval_unsup=eval_unsup)
