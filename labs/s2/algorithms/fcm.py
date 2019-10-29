@@ -29,29 +29,40 @@ class FuzzyCMeans(KMeans):
         Update c-partition matrix U and centroids (centers of gravity) V.
         :param args: Ignored for inheritance interface design.
         """
+        print('Loss BEFORE', self._loss())
         self._update_u()
+        print('Loss AFTER update_u()', self._loss())
         self._update_v()
+        print('Loss AFTER update_v()', self._loss())
+        print('--------------------')
 
     def _update_v(self):
         """
         Update centroids (centers of gravity) V.
         v_k = ∑_i ((U_ki ^ m) * x_i) / ∑_i (U_ki ^ m)
         """
-        centrooids = self.centroids.copy()
 
-        # u_pow_m = self.u ** self.m
-        # n_term = u_pow_m @ self.X
-        # d_term = u_pow_m.sum(axis=1, keepdims=True)
-        # self.centroids = n_term / d_term
-
+        #u_pow_m = self.u ** self.m
+        #n_term = u_pow_m @ self.X
+        #d_term = u_pow_m.sum(axis=1, keepdims=True)
+        #centroids = n_term / d_term
+        #self.centroids = centroids
+        #return
         for i in range(self.K):
             u_pow_m = self.u[i, :] ** self.m
             self.centroids[i, :] = (u_pow_m.dot(self.X)).sum() / u_pow_m.sum()
 
-        # print(self.centroids[:, 0])
-        # print(centrooids[:, 0])
+        #print(self.centroids[:, 0])
+        #print(centroids[:, 0])
 
-        # input()
+        #input()
+
+    def _loss(self):
+        res = 0
+        for k in range(self.X.shape[0]):
+            for i in range(self.K):
+                res += (self.u[i,k]**self.m) * np.linalg.norm(self.X[k] - self.centroids[i])**2
+        return res
 
     def _update_u(self):
         # TODO: Vectorize
