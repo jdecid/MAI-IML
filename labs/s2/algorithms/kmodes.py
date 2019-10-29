@@ -5,8 +5,9 @@ import pandas as pd
 from scipy import stats
 
 from algorithms.kmeans import KMeans
-
-
+from utils import read_dataset
+from sklearn.metrics import *
+from evaluate import *
 class KModes(KMeans):
     def __init__(self, K: int, seed=1):
         """
@@ -37,6 +38,7 @@ class KModes(KMeans):
 
 
 if __name__ == '__main__':
+    ''''
     dataset = pd.read_csv('../datasets/car.data')
     X = dataset.iloc[:, :6]
 
@@ -49,3 +51,14 @@ if __name__ == '__main__':
     print(c)
     Y = dataset.iloc[:, 6]
     print(Y.value_counts())
+    '''
+    dataset = pd.read_csv('../tests/datasets/house-votes-84.data')
+    X = dataset.iloc[:, 1:]
+    y = dataset.iloc[:,0]
+    kmodes = KModes(K=2, seed=1)
+    res = kmodes.fit_predict(X.values)
+    c = collections.Counter()
+    c.update(res)
+    print(c)
+    print(evaluate_supervised(labels_true=y, labels_pred=res))
+
