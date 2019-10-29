@@ -42,20 +42,10 @@ class FuzzyCMeans(KMeans):
         v_k = ∑_i ((U_ki ^ m) * x_i) / ∑_i (U_ki ^ m)
         """
 
-        #u_pow_m = self.u ** self.m
-        #n_term = u_pow_m @ self.X
-        #d_term = u_pow_m.sum(axis=1, keepdims=True)
-        #centroids = n_term / d_term
-        #self.centroids = centroids
-        #return
-        for i in range(self.K):
-            u_pow_m = self.u[i, :] ** self.m
-            self.centroids[i, :] = (u_pow_m.dot(self.X)).sum() / u_pow_m.sum()
-
-        #print(self.centroids[:, 0])
-        #print(centroids[:, 0])
-
-        #input()
+        u_pow_m = self.u ** self.m
+        n_term = u_pow_m @ self.X
+        d_term = u_pow_m.sum(axis=1, keepdims=True)
+        self.centroids = n_term / d_term
 
     def _loss(self):
         res = 0
