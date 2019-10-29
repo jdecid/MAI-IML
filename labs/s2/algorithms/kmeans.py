@@ -1,6 +1,7 @@
+from typing import List
+
 import matplotlib.pyplot as plt
 import numpy as np
-
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import distance
 from sklearn.decomposition import PCA
@@ -19,14 +20,19 @@ class KMeans:
         :param vis_dims: Visualization level (0 no visualization, 2 for 2D and 3 for 3D).
         :param seed: Fixed seed to allow reproducibility.
         """
-        assert K > 0, 'K must be a positive number > 0'
-        assert vis_dims in [0, 2, 3], 'visualize must be an integer in {0, 2, 3}'
-        assert metric in ['euclidean', 'cityblock', 'cosine'], \
-            'accepted metrics are euclidean, manhattan and cosine distances'
+        if K < 1:
+            raise ValueError('K must be a positive number > 0')
+
+        if vis_dims not in [0, 2, 3]:
+            raise ValueError('Visualize dimensions must be an integer in {0, 2, 3}')
+
+        if metric not in ['euclidean', 'cityblock', 'cosine']:
+            raise ValueError('Accepted metrics are `euclidean`, `cityblock` and `cosine` distances')
 
         self.K = K
         self.metric = metric
         self.vis_dims = vis_dims
+
         self.seed = seed
 
         self.X = None
@@ -73,21 +79,35 @@ class KMeans:
             else:
                 previous_nearest_idx = nearest_idx
 
-    def predict(self, X):
+    def predict(self, X: np.ndarray) -> List[int]:
+        """
+        Assign clusters to a list of observations.
+        :param X: 2D data array of size (rows, features).
+        :return: Cluster indexes assigned to each row of X.
+        """
+        if self.centroids is None:
+            raise Exception('Fit the model with some data before running a prediction')
+
         # Calculate distance from each point to each cluster
         distances = np.zeros(shape=(self.K, X.shape[0]))
-        for c_idx, centroid in enumerate(self.centroids):
-            for p_idx, point in enumerate(X):
-                distances[c_idx, p_idx] = self._distance(centroid, point)
+        for c, centroid in enumerate(self.centroids):
+            for p, point in enumerate(X):
+                distances[c, p] = self._distance(centroid, point)
 
         classes = []
-        for p_idx, point in enumerate(X):
-            cluster_idx = int(np.argmin(distances[:, p_idx]))
+        for p, point in enumerate(X):
+            cluster_idx = int(np.argmin(distances[:, p]))
             classes.append(cluster_idx)
 
         return classes
 
-    def fit_predict(self, X, max_it=20):
+    def fit_predict(self, X: np.ndarray, max_it=1000) -> List[int]:
+        """
+        Fit the model with provided data and return their assigned clusters.
+        :param X: 2D data array of size (rows, features).
+        :param max_it: Maximum number of iterations for the algorithm.
+        :return: Cluster indexes assigned to each row of X.
+        """
         self.fit(X, max_it)
         return self.predict(X)
 

@@ -17,6 +17,24 @@ class KMeansTest(unittest.TestCase):
 
         self.seed = 42
 
+    def test_kmeans_with_invalid_clusters(self):
+        with self.assertRaises(ValueError):
+            _ = KMeans(K=0)
+
+    def test_kmeans_with_invalid_visualization_dimensions(self):
+        with self.assertRaises(ValueError):
+            _ = KMeans(K=0)
+
+    def test_kmeans_with_invalid_metric(self):
+        with self.assertRaises(ValueError):
+            _ = KMeans(K=3, metric='mahalanobis')
+
+    def test_predict_before_fit_throws_error(self):
+        kmeans = KMeans(K=3, metric='euclidean', vis_dims=0, seed=self.seed)
+
+        with self.assertRaises(Exception):
+            kmeans.predict(self.dataset)
+
     def test_kmeans(self):
         with open('s2/tests/datasets/Mall_Customers_labels.pkl', mode='rb') as f:
             expected_predictions = pickle.load(f)
