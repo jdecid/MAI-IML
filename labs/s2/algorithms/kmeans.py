@@ -147,7 +147,15 @@ class KMeans:
         return distance.cdist(np.array([a]), np.array([b]), metric=self.metric)[0][0]
 
     def _check_convergence(self, it, max_it, previous_centroids):
-        return it >= max_it or (previous_centroids == self.centroids).all()
+        if it >= max_it:
+            return True
+        conv = previous_centroids == self.centroids
+        # TODO: posar maco lmao
+        try:
+            conv = conv.all()
+        except BaseException as e:
+            pass
+        return conv
 
     def _display_iteration(self, X, nearest_idx):
         """
