@@ -57,15 +57,15 @@ class FuzzyCMeans(KMeans):
 
     def _update_u(self):
         # TODO: Vectorize
-        for i in range(self.u.shape[0]):
-            for k in range(self.u.shape[1]):
-                uik = 0
-                num = np.linalg.norm(self.X[k, :] - self.centroids[i])
+        for k in range(self.K):
+            for i in range(self.X.shape[0]):
+                u_ki = 0
+                num = np.linalg.norm(self.X[i, :] - self.centroids[k])
                 for j in range(self.u.shape[0]):
-                    den = np.linalg.norm(self.X[k, :] - self.centroids[j])
-                    uik += (num / den) ** (2 / (self.m - 1))
-                uik ** -1
-                self.u[i, k] = uik
+                    den = np.linalg.norm(self.X[i, :] - self.centroids[j])
+                    u_ki += (num / den) ** (2 / (self.m - 1))
+                u_ki **= -1
+                self.u[k, i] = u_ki
 
         # TODO: Necessary?
         self.u = self.u / self.u.sum(axis=0)[None, :]
