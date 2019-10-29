@@ -7,7 +7,7 @@ from algorithms.kmeans import KMeans
 
 
 class FuzzyCMeans(KMeans):
-    def __init__(self, C: int, m: int, vis_dims: int):
+    def __init__(self, C: int, m: int, vis_dims: int, epsilon: float = 0.01):
         """
 
         :param C: Number of Clusters
@@ -15,6 +15,7 @@ class FuzzyCMeans(KMeans):
         """
         super().__init__(K=C, vis_dims=vis_dims)
         self.m = m
+        self.epsilon = epsilon
 
     def _init_centroids(self):
         super()._init_centroids()
@@ -30,10 +31,10 @@ class FuzzyCMeans(KMeans):
         :param args: Ignored for inheritance interface design.
         """
         print('Loss BEFORE', self._loss())
-        self._update_u()
-        print('Loss AFTER update_u()', self._loss())
         self._update_v()
         print('Loss AFTER update_v()', self._loss())
+        self._update_u()
+        print('Loss AFTER update_u()', self._loss())
         print('--------------------')
 
     def _update_v(self):
@@ -68,6 +69,13 @@ class FuzzyCMeans(KMeans):
 
         # TODO: Necessary?
         self.u = self.u / self.u.sum(axis=0)[None, :]
+
+    def _check_convergence(self, it, max_it, previous_centroids):
+        if it >= max_it:
+            return True
+        if previous_centroids is not None:
+            return np.linalg.norm(self.centroids - previous_centroids, ord=1) < self.epsilon
+        return False
 
     def _display_iteration(self, X, nearest_idx):
         if self.vis_dims == 0:

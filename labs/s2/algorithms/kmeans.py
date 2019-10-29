@@ -45,7 +45,8 @@ class KMeans:
         self.X = X
         self._init_centroids()
 
-        previous_nearest_idx = None
+        # previous_nearest_idx = None
+        previous_centroids = None
 
         it = 0
         while True:
@@ -59,10 +60,10 @@ class KMeans:
             # Check convergence
 
             it += 1
-            if it >= max_it or previous_nearest_idx == nearest_idx:
+            if self._check_convergence(it, max_it, previous_centroids):
                 break
             else:
-                previous_nearest_idx = nearest_idx
+                previous_centroids = self.centroids
 
     def predict(self, X: np.ndarray) -> List[int]:
         """
@@ -144,6 +145,9 @@ class KMeans:
         :return: Distance between both vectors using the specified metric.
         """
         return distance.cdist(np.array([a]), np.array([b]), metric=self.metric)[0][0]
+
+    def _check_convergence(self, it, max_it, previous_centroids):
+        return it >= max_it or (previous_centroids == self.centroids).all()
 
     def _display_iteration(self, X, nearest_idx):
         """
