@@ -95,15 +95,11 @@ class FuzzyCMeans(KMeans):
 
 
 if __name__ == '__main__':
-    dataset = pd.read_csv('../tests/datasets/Mall_Customers.csv')
-    dataset.describe()
-    dataset = dataset.iloc[:, [2, 3, 4]].values
+    dataset = pd.read_csv('../tests/datasets/iris.csv')
+    dataset = dataset.iloc[:, 0:4].values
 
     sc = MinMaxScaler()
     dataset = sc.fit_transform(dataset)
 
-    fcm = FuzzyCMeans(C=4, m=2, vis_dims=2)
+    fcm = FuzzyCMeans(C=3, m=3, vis_dims=2)
     fcm.fit_predict(dataset)
-    # fcm.X = dataset
-    # fcm._init_u()
-    # fcm._display_iteration(dataset, None)
