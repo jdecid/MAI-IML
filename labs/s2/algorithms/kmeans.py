@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -48,33 +48,18 @@ class KMeans:
         previous_nearest_idx = None
 
         it = 0
-        while it < max_it:
-            print(f'Iteration {it}')
+        while True:
+            distances = self._calculate_distances(X)
+            _, nearest, nearest_idx = self._get_nearest(X, distances)
 
-            # Calculate distance from each point to each cluster
-            distances = np.zeros(shape=(self.K, X.shape[0]))
-            for c_idx, centroid in enumerate(self.centroids):
-                for p_idx, point in enumerate(X):
-                    distances[c_idx, p_idx] = self._distance(centroid, point)
+            self._display_iteration(X, nearest_idx)
 
-            # Get nearest points for each cluster
-            nearest = [[] for _ in range(self.K)]
-            nearest_idx = [[] for _ in range(self.K)]
-
-            for p_idx, point in enumerate(X):
-                min_index = int(np.argmin(distances[:, p_idx]))
-                nearest[min_index].append(point)
-                nearest_idx[min_index].append(p_idx)
-
-            if self.vis_dims:
-                self._display_iteration(X, nearest_idx)
-
-            # Recalculate centroids as the mean of their nearest points
             self._compute_centroids(nearest)
 
             # Check convergence
+
             it += 1
-            if previous_nearest_idx == nearest_idx:
+            if it >= max_it or previous_nearest_idx == nearest_idx:
                 break
             else:
                 previous_nearest_idx = nearest_idx
@@ -88,16 +73,8 @@ class KMeans:
         if self.centroids is None:
             raise Exception('Fit the model with some data before running a prediction')
 
-        # Calculate distance from each point to each cluster
-        distances = np.zeros(shape=(self.K, X.shape[0]))
-        for c, centroid in enumerate(self.centroids):
-            for p, point in enumerate(X):
-                distances[c, p] = self._distance(centroid, point)
-
-        classes = []
-        for p, point in enumerate(X):
-            cluster_idx = int(np.argmin(distances[:, p]))
-            classes.append(cluster_idx)
+        distances = self._calculate_distances(X)
+        classes, _, _ = self._get_nearest(X, distances)
 
         return classes
 
@@ -112,15 +89,61 @@ class KMeans:
         return self.predict(X)
 
     def _init_centroids(self):
-        """
-        Initialization method for the centroids
-        :return:
-        """
+        """Initialize centroids"""
         self.centroids = np.random.random(size=(self.K, self.X.shape[1]))
+
+    def _calculate_distances(self, X: np.ndarray) -> np.ndarray:
+        """
+        Calculate distance from each point to each cluster
+        :param X: 2D vector with the set of points of size (#observations, #features).
+        :return: Distance matrix of shape (K, #observations)
+        """
+        distances = np.zeros(shape=(self.K, X.shape[0]))
+
+        for c_idx, centroid in enumerate(self.centroids):
+            for p_idx, point in enumerate(X):
+                distances[c_idx, p_idx] = self._distance(centroid, point)
+
+        return distances
+
+    def _get_nearest(self, X: np.ndarray, distances: np.ndarray) \
+            -> Tuple[List[int], List[List[np.ndarray]], List[List[int]]]:
+        """
+        For each data instance
+        :param X: 2D vector with the set of points of size (#observations, #features).
+        :param distances: 2D vector of distances between centroids and observations.
+        :return: Tuple containing:
+            - Cluster indexes assigned to each observation.
+            - List of nearest observations for each cluster.
+            - List of nearest observations index for each cluster.
+        """
+        # Get nearest points for each cluster
+        classes = []
+        nearest = [[] for _ in range(self.K)]
+        nearest_idx = [[] for _ in range(self.K)]
+
+        for p_idx, point in enumerate(X):
+            cluster_idx = int(np.argmin(distances[:, p_idx]))
+
+            classes.append(cluster_idx)
+            nearest[cluster_idx].append(point)
+            nearest_idx[cluster_idx].append(p_idx)
+
+        return classes, nearest, nearest_idx
 
     def _compute_centroids(self, nearest):
         # TODO: Ugly AF
         self.centroids = np.array(list(map(lambda x: np.mean(np.array(x), axis=0), nearest)))
+
+    def _distance(self, a: np.ndarray, b: np.ndarray) -> float:
+        """
+        Compute distance between 2 elements using the specified metric. Check metrics in:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
+        :param a: 1D vector with all A attributes.
+        :param b: 1D vector with all B attributes.
+        :return: Distance between both vectors using the specified metric.
+        """
+        return distance.cdist(np.array([a]), np.array([b]), metric=self.metric)[0][0]
 
     def _display_iteration(self, X, nearest_idx):
         """
@@ -128,6 +151,9 @@ class KMeans:
         :param X: 2D vector with the set of points of size (instances, features).
         :param nearest_idx: List of size (K, ?) assigning each point to its nearest cluster.
         """
+        if self.vis_dims == 0:
+            return
+
         points = X.copy()
         centroids = self.centroids.copy()
 
@@ -171,16 +197,6 @@ class KMeans:
                             c=[self.colors[k]], s=10, alpha=0.5)
 
         plt.show()
-
-    def _distance(self, a: np.ndarray, b: np.ndarray) -> float:
-        """
-        Compute distance between 2 elements using the specified metric. Check metrics in:
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
-        :param a: 1D vector with all A attributes.
-        :param b: 1D vector with all B attributes.
-        :return:
-        """
-        return distance.cdist(np.array([a]), np.array([b]), metric=self.metric)[0][0]
 
     @staticmethod
     def _get_colors(n):
