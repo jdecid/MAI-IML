@@ -89,11 +89,15 @@ class KMeans:
 
         return classes
 
-    def fit_predict(self, X):
-        self.fit(X)
+    def fit_predict(self, X, max_it=20):
+        self.fit(X, max_it)
         return self.predict(X)
 
     def _init_centroids(self):
+        """
+        Initialization method for the centroids
+        :return:
+        """
         self.centroids = np.random.random(size=(self.K, self.X.shape[1]))
 
     def _compute_centroids(self, nearest):
@@ -173,10 +177,10 @@ class KMeans:
 if __name__ == '__main__':
     dataset = pd.read_csv('Mall_Customers.csv')
     dataset.describe()
-    dataset = dataset.iloc[:, [2, 4]].values
+    dataset = dataset.iloc[:, [2, 3, 4]].values
 
     scaler = MinMaxScaler()
     dataset = scaler.fit_transform(dataset)
 
-    kmeans = KMeans(K=5, metric='cosine', vis_dims=2)
+    kmeans = KMeans(K=5, metric='cosine', vis_dims=3)
     kmeans.fit_predict(dataset)

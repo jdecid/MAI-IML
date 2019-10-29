@@ -1,9 +1,10 @@
+import collections
+
 import numpy as np
 import pandas as pd
 
 from scipy import stats
 from algorithms.kmeans import KMeans
-from sklearn.preprocessing import MinMaxScaler
 
 
 class KPrototypes(KMeans):
@@ -30,22 +31,33 @@ class KPrototypes(KMeans):
                 self.centroids[k, self.mask] = stats.mode(np.array(nearest[k])[:, self.mask]).mode[0]
 
         # Numerical
-        self.centroids[:, ~self.mask] = np.array(list(map(lambda x: np.mean(np.array(x)[:, ~self.mask], axis=0), nearest)))
+        self.centroids[:, ~self.mask] = np.array(
+            list(map(lambda x: np.mean(np.array(x)[:, ~self.mask], axis=0), nearest)))
 
-    def _distance(self, a, b):
-        # delta kronecker (0 if ==, else 1)
+    def _distance(self, a: np.ndarray, b: np.ndarray) -> float:
+        """
+        Compute distance between two points using:
+            - Categorical attributes: Kronecker's delta (1 if the values are equal, and 0 otherwise).
+            - Numerical attributes: Distance according to the specified metric in the instantiation.
+        :param a: 1D vector with all A attributes.
+        :param b: 1D vector with all B attributes.
+        :return: Numerical attributes distance + gamma_factor * Categorical attributes distance.
+        """
         num_sum = np.linalg.norm(a[~self.mask] - b[~self.mask])
-        cat_sum = np.sum(a[self.mask] != b[self.mask])
+        cat_sum = sum(a[self.mask] != b[self.mask])
         return num_sum + self.gamma * cat_sum
 
 
 if __name__ == '__main__':
-    dataset = pd.read_csv('Mall_Customers.csv')
-    dataset.describe()
-    X = dataset.iloc[:, 1:].values
+    dataset = pd.read_csv('../datasets/cmc.data')
+    X = dataset.iloc[:, :9]
 
-    scaler = MinMaxScaler()
-    X[:, 1:] = scaler.fit_transform(X[:, 1:])
-
-    kprototypes = KPrototypes(3, cat_idx=[0])
-    kprototypes.fit_predict(X)
+    kprototypes = KPrototypes(K=3, cat_idx=[1, 2, 4, 5, 6, 7, 8])
+    res = kprototypes.fit_predict(X.values)
+    with open('res.txt', 'w') as f:
+        f.write(str(res))
+    c = collections.Counter()
+    c.update(res)
+    print(c)
+    Y = dataset.iloc[:, 9]
+    print(Y.value_counts())
