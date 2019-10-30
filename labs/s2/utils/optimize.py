@@ -1,44 +1,51 @@
-from math import inf
+import logging
+from typing import Type, List
+
+import numpy as np
+from sklearn.metrics import calinski_harabasz_score
+
+from algorithms.kmeans import KMeans
+
+metrics = {
+    'calinski_harabasz_score': calinski_harabasz_score
+}
 
 
-def init_best(goal):
-    if goal == 'maximize':
-        best_val = -inf
-    else:
-        best_val = inf
-    return best_val
-
-
-def better(goal, current_best_val, new_val):
-    if goal == 'maximize':
-        return new_val > current_best_val
-    else:
-        return new_val < current_best_val
-
-
-def optimize(X, algorithm, algorithm_params, metric, metric_params, k_values, goal):
+def optimize(X: np.ndarray,
+             algorithm: Type[KMeans], algorithm_params: dict,
+             metric: str, metric_params: dict,
+             k_values: List[int], goal: str) -> List[dict]:
     """
-
-    :param X:
-    :param algorithm:
-    :param algorithm_params:
-    :param metric:
-    :param metric_params:
-    :param k_values:
-    :param goal:
-    :return:
+    Optimize K value for the same data, algorithm and metric.
+    :param X: 2D data matrix of size (#observations, #features).
+    :param algorithm: Algorithm class to instantiate.
+    :param algorithm_params: Extra parameters for the algorithm class.
+    :param metric: Metric function used to evaluate.
+    :param metric_params: Extra parameters for the metric function.
+    :param k_values: List of `K` values to test.
+    :param goal: `maximize` or `minimize` the metric.
+    :return: List sorted from best to worst K value also containing metric score and predictions obtained.
     """
     assert goal in ['maximize', 'minimize']
-    best_val = init_best(goal)
-    best_k = None
-    all_vals = {}
+
+    logging.info(f'Optimizing {algorithm.__name__} with {metric} for K in {k_values}')
+
+    executions = []
     for k in k_values:
-        clust_alg = algorithm(K=k, **algorithm_params)
-        clustering = clust_alg.fit_predict(X)
-        metric_params['labels'] = clustering
-        new_val = metric(**metric_params)
-        all_vals[k] = new_val
-        if better(goal, best_val, new_val):
-            best_k = k
-            best_val = new_val
-    return dict(best={best_k: best_val}, all_vals=all_vals)
+        logging.info(f'Optimizing K = {k}')
+
+        alg = algorithm(K=k, **algorithm_params)
+        prediction = alg.fit_predict(X)
+
+        metric_params['labels'] = prediction
+        score = metrics[metric](**metric_params)
+
+        executions.append({
+            'k': k,
+            'score': score,
+            'prediction': prediction
+        })
+
+    return sorted(executions,
+                  key=lambda x: x['score'],
+                  reverse=goal == 'maximize')

@@ -1,12 +1,12 @@
-import os
 import logging
+import os
+
 import pandas as pd
 
 from algorithms.kmeans import KMeans
-from algorithms.kmodes import KModes
-from preprocessing import connect_4, adult, segment
-from utils.optimize import optimize
+from preprocessing import adult
 from utils import evaluate
+from utils.optimize import optimize
 
 
 def main():
@@ -46,8 +46,6 @@ def main():
                       k_values=[2, 3, 4, 5],
                       goal='minimize')
 
-    print(result)
-
     # Evaluate
     # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
     result_best_k = result[0]
@@ -55,8 +53,8 @@ def main():
     # With k = n_classes
     for res in result:
         if res['k'] == n_classes:
+            print(evaluate.evaluate_supervised(labels_true=y, labels_pred=res['prediction']))
             break
-    evaluate.evaluate_supervised(labels_true=y, labels_pred=res['prediction'])
 
     # ------------------------------------------------------ #
 
