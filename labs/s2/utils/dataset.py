@@ -45,11 +45,3 @@ def filter_datasets_by_attributes_type(dataset, tp):
                                     (any(t == 'nominal') for t in dataset[k]['meta'].types()), dataset)
 
     return list(map(lambda x: dataset[x]['meta'].name, filtered))
-
-
-if __name__ == '__main__':
-    def main():
-        read_dataset()
-
-
-    main()
