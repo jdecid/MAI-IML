@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from utils import read_dataset
+from utils.dataset import read_dataset
 
 
 def preprocess():
@@ -118,4 +118,4 @@ def preprocess():
     with open('datasets/adult-clean.csv', mode='w') as f:
         X_df.to_csv(f, index=False)
 
-    return 'adult-clean', 'adult-clean_enc'
+    return 'adult-clean.csv', 'adult-clean_enc.csv'

@@ -2,7 +2,7 @@
 # coding: utf-8
 
 # from sklearn.preprocessing import OneHotEncoder, LabelEncoder
-from utils import read_dataset
+from utils.dataset import read_dataset
 import os
 import pandas as pd
 

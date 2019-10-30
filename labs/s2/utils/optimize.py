@@ -1,4 +1,4 @@
-from math import inf
+xfrom math import inf
 from algorithms.kmeans import KMeans
 
 

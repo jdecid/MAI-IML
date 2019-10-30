@@ -1,3 +1,5 @@
+import logging
+
 from typing import List, Tuple
 
 import matplotlib.pyplot as plt
@@ -61,6 +63,7 @@ class KMeans:
             self._compute_centroids(nearest)
 
             # Check convergence
+            logging.info(f'{self.it:3}/{self.max_it} Loss: {1}')
 
             self.it += 1
             if self._check_convergence(previous_centroids):
@@ -82,11 +85,10 @@ class KMeans:
 
         return classes
 
-    def fit_predict(self, X: np.ndarray, max_it=1000) -> List[int]:
+    def fit_predict(self, X: np.ndarray) -> List[int]:
         """
         Fit the model with provided data and return their assigned clusters.
         :param X: 2D data array of size (rows, features).
-        :param max_it: Maximum number of iterations for the algorithm.
         :return: Cluster indexes assigned to each row of X.
         """
         self.fit(X)
@@ -138,6 +140,9 @@ class KMeans:
     def _compute_centroids(self, nearest):
         # TODO: Ugly AF
         self.centroids = np.array(list(map(lambda x: np.mean(np.array(x), axis=0), nearest)))
+
+    def _loss(self, nearest):
+        pass
 
     def _distance(self, a: np.ndarray, b: np.ndarray) -> float:
         """
