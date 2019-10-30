@@ -39,6 +39,3 @@ def preprocess():
         X_numerical_as_categorical.to_csv(f, index=False)
 
     return 'segment_clean.csv', 'segment_clean_cat.csv', 'segment_clean_y.csv'
-
-if __name__ == '__main__':
-    preprocess()
