@@ -1,3 +1,4 @@
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -18,10 +19,12 @@ class FuzzyCMeans(KMeans):
         self.epsilon = epsilon
 
     def _init_centroids(self):
+        """Initialize centroids (V) and c-partition matrix U"""
         super()._init_centroids()
         self._init_u()
 
     def _init_u(self):
+        """Initialize matrix U (K, n) with random values such that each column adds up to 1."""
         u = np.random.random(size=(self.K, self.X.shape[0]))
         self.u = u / u.sum(axis=0)[None, :]
 
@@ -30,12 +33,11 @@ class FuzzyCMeans(KMeans):
         Update c-partition matrix U and centroids (centers of gravity) V.
         :param args: Ignored for inheritance interface design.
         """
-        print('Loss BEFORE', self._loss())
         self._update_v()
-        print('Loss AFTER update_v()', self._loss())
+        logging.debug(f'({self.it:3}/{self.max_it}) Loss after updating V: {self._loss():.6f}')
+
         self._update_u()
-        print('Loss AFTER update_u()', self._loss())
-        print('--------------------')
+        logging.debug(f'({self.it:3}/{self.max_it}) Loss after updating U: {self._loss():.6f}')
 
     def _update_v(self):
         """
@@ -74,8 +76,8 @@ class FuzzyCMeans(KMeans):
         # TODO: Necessary?
         self.u = self.u / self.u.sum(axis=0)[None, :]
 
-    def _check_convergence(self, it, max_it, previous_centroids):
-        if it >= max_it:
+    def _check_convergence(self, previous_centroids):
+        if self.it >= self.max_it:
             return True
         if previous_centroids is not None:
             return np.linalg.norm(self.centroids - previous_centroids, ord=1) < self.epsilon
@@ -99,6 +101,8 @@ class FuzzyCMeans(KMeans):
 
 
 if __name__ == '__main__':
+    logging.getLogger('matplotlib').setLevel(logging.WARNING)
+    logging.getLogger().setLevel(logging.DEBUG)
     dataset = pd.read_csv('../tests/datasets/iris.csv')
     dataset = dataset.iloc[:, 0:4].values
 
