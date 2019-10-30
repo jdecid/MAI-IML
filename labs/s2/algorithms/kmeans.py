@@ -43,6 +43,7 @@ class KMeans:
 
         self.X = None
         self.centroids = None
+        self.nearest = None
 
         self.colors = self._get_colors(K)
 
@@ -56,14 +57,14 @@ class KMeans:
 
         while True:
             distances = self._calculate_distances(X)
-            _, nearest, nearest_idx = self._get_nearest(X, distances)
+            _, self.nearest, nearest_idx = self._get_nearest(X, distances)
 
             self._display_iteration(X, nearest_idx)
 
-            self._compute_centroids(nearest)
+            self._compute_centroids()
 
             # Check convergence
-            logging.info(f'{self.it:3}/{self.max_it} Loss: {1}')
+            logging.info(f'{self.it:3}/{self.max_it} Loss: {self._loss()}')
 
             self.it += 1
             if self._check_convergence(previous_centroids):
@@ -137,12 +138,16 @@ class KMeans:
 
         return classes, nearest, nearest_idx
 
-    def _compute_centroids(self, nearest):
+    def _compute_centroids(self):
         # TODO: Ugly AF
-        self.centroids = np.array(list(map(lambda x: np.mean(np.array(x), axis=0), nearest)))
+        self.centroids = np.array(list(map(lambda x: np.mean(np.array(x), axis=0), self.nearest)))
 
-    def _loss(self, nearest):
-        pass
+    def _loss(self):
+        # TODO: Avoid repeat, use previous calculated distances
+        loss = 0
+        for k in range(len(self.nearest)):
+            loss += sum(list(map(lambda x: self._distance(x, self.centroids[k]), self.nearest[k])))
+        return loss
 
     def _distance(self, a: np.ndarray, b: np.ndarray) -> float:
         """

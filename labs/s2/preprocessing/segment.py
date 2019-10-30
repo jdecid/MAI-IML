@@ -31,12 +31,12 @@ def preprocess():
     linkages = ['complete', 'average', 'single']
     affinities = ['euclidean', 'cosine']
 
-    cluster_models = []
-    for linkage in linkages:
-        for affinity in affinities:
-            cluster_models.append(AgglomerativeClustering(affinity=affinity, linkage=linkage).fit(df))
+    # cluster_models = []
+    # for linkage in linkages:
+    #    for affinity in affinities:
+    #        cluster_models.append(AgglomerativeClustering(affinity=affinity, linkage=linkage).fit(df))
 
-    print(cluster_models)
+    # print(cluster_models)
 
     def plot_dendrogram(model, **kwargs):
         # Children of hierarchical clustering
@@ -55,9 +55,9 @@ def preprocess():
         # Plot the corresponding dendrogram
         dendrogram(linkage_matrix, **kwargs)
 
-    for model in cluster_models:
-        plot_dendrogram(model, labels=model.labels_, truncate_mode='level', p=10)
-    plt.show()
+    # for model in cluster_models:
+    #    plot_dendrogram(model, labels=model.labels_, truncate_mode='level', p=10)
+    # plt.show()
 
     # Write data
     with open('datasets/segment-clean.csv', mode='w') as f:
