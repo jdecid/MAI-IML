@@ -11,8 +11,8 @@ class KMeansTest(unittest.TestCase):
     def setUp(self):
         sc = MinMaxScaler()
 
-        dataset = pd.read_csv('s2/tests/datasets/Mall_Customers.csv')
-        dataset = dataset.iloc[:, [2, 3, 4]].values
+        dataset = pd.read_csv('s2/tests/datasets/iris.csv')
+        dataset = dataset.iloc[:, :4].values
         self.dataset = sc.fit_transform(dataset)
 
         self.seed = 42
@@ -36,7 +36,7 @@ class KMeansTest(unittest.TestCase):
             kmeans.predict(self.dataset)
 
     def test_kmeans(self):
-        with open('s2/tests/datasets/Mall_Customers_labels.pkl', mode='rb') as f:
+        with open('s2/tests/datasets/iris.pkl', mode='rb') as f:
             expected_predictions = pickle.load(f)
 
         kmeans = KMeans(K=3, metric='euclidean', vis_dims=0, seed=self.seed)
