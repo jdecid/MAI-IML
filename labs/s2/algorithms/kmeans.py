@@ -150,11 +150,8 @@ class KMeans:
         if it >= max_it:
             return True
         conv = previous_centroids == self.centroids
-        # TODO: posar maco lmao
-        try:
-            conv = conv.all()
-        except BaseException as e:
-            pass
+        if isinstance(conv, np.ndarray):
+            return conv.all()
         return conv
 
     def _display_iteration(self, X, nearest_idx):
