@@ -18,14 +18,14 @@ def preprocess():
     data = dataset['data']
 
     df = pd.DataFrame(data)
-    df = df.drop(columns=['class', 'region-pixel-count'])
-    # df.head()
+    X = df.drop(columns=['class', 'region-pixel-count'])
+    # X.head()
 
     # Normalize
     scaler = MinMaxScaler()
-    df[:] = scaler.fit_transform(df)
+    X[:] = scaler.fit_transform(X)
 
-    # df.head()
+    # X.head()
 
     # Agglomerative clustering
     linkages = ['complete', 'average', 'single']
@@ -59,4 +59,8 @@ def preprocess():
         plot_dendrogram(model, labels=model.labels_, truncate_mode='level', p=10)
     plt.show()
 
-    return
+    # Write data
+    with open('datasets/segment-clean.csv', mode='w') as f:
+        X.to_csv(f, index=False)
+
+    return 'segment-clean.csv'
