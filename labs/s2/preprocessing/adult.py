@@ -11,9 +11,10 @@ def preprocess():
     data = dataset['data']
 
     df = pd.DataFrame(data)
+
+    df = df.applymap(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
     y = df['class'].copy()
     df = df.drop(columns=['class'])
-    df = df.applymap(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
 
     categorical_features = ['workclass', 'education', 'marital-status', 'occupation',
                             'relationship', 'race', 'sex', 'native-country']
@@ -123,5 +124,4 @@ def preprocess():
 
     with open(os.path.join('datasets', 'adult-clean-y.csv'), mode='w') as f:
         y.to_csv(f, index=False)
-
     return 'adult-clean.csv', 'adult-clean_enc.csv', 'adult-clean-y.csv'

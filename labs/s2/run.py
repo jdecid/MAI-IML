@@ -30,8 +30,8 @@ def main():
     print('KMeans')
 
     X = pd.read_csv(os.path.join('datasets', file_adult_enc))
-    y = pd.read_csv(os.path.join('datasets', file_adult_y))
-    n_classes = len(set(y))
+    y = pd.read_csv(os.path.join('datasets', file_adult_y), header=None,).values.flatten()
+    n_classes = len(set(list(y)))
 
     # kmeans = KMeans(K=2, vis_dims=2)
     # kmeans.fit_predict(X.values)
@@ -49,10 +49,11 @@ def main():
     # Evaluate
     # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
     result_best_k = result[0]
-    evaluate.evaluate_unsupervised(X=X, labels=result_best_k['prediction'])
+    print(evaluate.evaluate_unsupervised(X=X, labels=result_best_k['prediction']))
     # With k = n_classes
     for res in result:
         if res['k'] == n_classes:
+            print()
             print(evaluate.evaluate_supervised(labels_true=y, labels_pred=res['prediction']))
             break
 
