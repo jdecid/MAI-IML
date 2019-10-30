@@ -7,13 +7,13 @@ from algorithms.kmeans import KMeans
 
 
 class FuzzyCMeans(KMeans):
-    def __init__(self, C: int, m: int, vis_dims: int, epsilon: float = 0.01):
+    def __init__(self, C: int, m: int, vis_dims: int, epsilon=0.01, seed=1):
         """
 
         :param C: Number of Clusters
         :param m: Degree of fuzziness (1 - crisp)
         """
-        super().__init__(K=C, vis_dims=vis_dims)
+        super().__init__(K=C, vis_dims=vis_dims, seed=seed)
         self.m = m
         self.epsilon = epsilon
 
@@ -42,17 +42,21 @@ class FuzzyCMeans(KMeans):
         Update centroids (centers of gravity) V.
         v_k = ∑_i ((U_ki ^ m) * x_i) / ∑_i (U_ki ^ m)
         """
-
         u_pow_m = self.u ** self.m
         n_term = u_pow_m @ self.X
         d_term = u_pow_m.sum(axis=1, keepdims=True)
         self.centroids = n_term / d_term
 
     def _loss(self):
+        """
+
+        :return:
+        """
+        # TODO: Vectorize
         res = 0
-        for k in range(self.X.shape[0]):
-            for i in range(self.K):
-                res += (self.u[i,k]**self.m) * np.linalg.norm(self.X[k] - self.centroids[i])**2
+        for i in range(self.X.shape[0]):
+            for k in range(self.K):
+                res += (self.u[k, i] ** self.m) * np.linalg.norm(self.X[i] - self.centroids[k]) ** 2
         return res
 
     def _update_u(self):
