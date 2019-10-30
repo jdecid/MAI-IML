@@ -34,7 +34,7 @@ def optimize(X, clustering_alg, clustering_alg_params, metric, metric_params, k_
         if better(goal, best_val, new_val):
             best_k = k
             best_val = new_val
-    return best_k, best_val, all_vals
+    return dict(best={best_k: best_val}, all_vals=all_vals)
 
 
 def main():
