@@ -1,9 +1,10 @@
 from glob import glob
 
+import os
 from scipy.io import arff
 
 
-def read_dataset(name=None, verbose=False):
+def read_dataset(name=None, dataset_path='datasets', verbose=False, ):
     """
     Read datasets in format arff inside ./datasets folder.
     :param name: Name of the dataset, if None, reads all datasets.
@@ -13,13 +14,14 @@ def read_dataset(name=None, verbose=False):
     datasets = {}
 
     if name is not None:
-        files = [f'datasets/{name}.arff']
+        files = [f'{dataset_path}/{name}.arff']
     else:
-        files = sorted(glob('datasets/*.arff'))
+        files = sorted(glob(f'{dataset_path}/*.arff'))
 
     for idx, path in enumerate(files):
         name = path[9:-5]
-        print(f'[{idx:2}/{len(files)}] Reading {name} dataset...')
+        if name is None:
+            print(f'[{idx:2}/{len(files)}] Reading {name} dataset...')
 
         with open(path, mode='r') as f:
             data, meta = arff.loadarff(f)

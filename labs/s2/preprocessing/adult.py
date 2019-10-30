@@ -5,6 +5,7 @@ from utils.dataset import read_dataset
 
 import os
 
+# TODO: From notebook
 
 def preprocess():
     dataset = read_dataset('adult')
