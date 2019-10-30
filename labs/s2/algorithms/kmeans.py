@@ -12,11 +12,12 @@ class KMeans:
 
     """
 
-    def __init__(self, K: int, metric='euclidean', vis_dims=0, seed=1):
+    def __init__(self, K: int, max_it=1000, metric='euclidean', vis_dims=0, seed=1):
         """
 
         :param K: Number of Clusters
         :param metric: Distance function
+        :param max_it: Maximum number of iterations if hasn't reached convergence yet.
         :param vis_dims: Visualization level (0 no visualization, 2 for 2D and 3 for 3D).
         :param seed: Fixed seed to allow reproducibility.
         """
@@ -35,12 +36,15 @@ class KMeans:
 
         self.seed = seed
 
+        self.it = 0
+        self.max_it = max_it
+
         self.X = None
         self.centroids = None
 
         self.colors = self._get_colors(K)
 
-    def fit(self, X: np.ndarray, max_it=20):
+    def fit(self, X: np.ndarray):
         np.random.seed(self.seed)
         self.X = X
         self._init_centroids()
@@ -48,7 +52,6 @@ class KMeans:
         # previous_nearest_idx = None
         previous_centroids = None
 
-        it = 0
         while True:
             distances = self._calculate_distances(X)
             _, nearest, nearest_idx = self._get_nearest(X, distances)
@@ -59,8 +62,8 @@ class KMeans:
 
             # Check convergence
 
-            it += 1
-            if self._check_convergence(it, max_it, previous_centroids):
+            self.it += 1
+            if self._check_convergence(previous_centroids):
                 break
             else:
                 previous_centroids = self.centroids
@@ -86,7 +89,7 @@ class KMeans:
         :param max_it: Maximum number of iterations for the algorithm.
         :return: Cluster indexes assigned to each row of X.
         """
-        self.fit(X, max_it)
+        self.fit(X)
         return self.predict(X)
 
     def _init_centroids(self):
@@ -146,8 +149,13 @@ class KMeans:
         """
         return distance.cdist(np.array([a]), np.array([b]), metric=self.metric)[0][0]
 
-    def _check_convergence(self, it, max_it, previous_centroids):
-        return it >= max_it or (previous_centroids == self.centroids).all()
+    def _check_convergence(self, previous_centroids):
+        if self.it >= self.max_it:
+            return True
+        conv = previous_centroids == self.centroids
+        if isinstance(conv, np.ndarray):
+            return conv.all()
+        return conv
 
     def _display_iteration(self, X, nearest_idx):
         """

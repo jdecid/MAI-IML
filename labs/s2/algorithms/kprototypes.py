@@ -5,7 +5,7 @@ import pandas as pd
 
 from scipy import stats
 from algorithms.kmeans import KMeans
-
+from evaluate import *
 
 class KPrototypes(KMeans):
     def __init__(self, K, cat_idx, gamma=1):
@@ -49,6 +49,7 @@ class KPrototypes(KMeans):
 
 
 if __name__ == '__main__':
+    ''''
     dataset = pd.read_csv('../datasets/cmc.data')
     X = dataset.iloc[:, :9]
 
@@ -61,3 +62,21 @@ if __name__ == '__main__':
     print(c)
     Y = dataset.iloc[:, 9]
     print(Y.value_counts())
+    '''
+    dataset = pd.read_csv('../tests/datasets/post-operative.data')
+    print(len(dataset))
+    dataset = dataset[~dataset.isin(["?"]).any(axis=1)]
+    dataset.iloc[:, 7] = dataset.iloc[:, 7].apply(lambda x: int(x))
+    dataset.iloc[:, 8] = dataset.iloc[:, 8].apply(lambda x: x.strip())
+    print(len(dataset))
+    X = dataset.iloc[:, :-1]
+    y = dataset.iloc[:,-1]
+    print(set(y))
+    kprototypes = KPrototypes(K=3, cat_idx=[0,1,2,3,4,5,6])
+    res = kprototypes.fit_predict(X.values)
+    c = collections.Counter()
+    c.update(res)
+    print(c)
+    print(evaluate_supervised(labels_true=y, labels_pred=res))
+
+
