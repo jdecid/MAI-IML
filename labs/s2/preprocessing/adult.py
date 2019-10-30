@@ -3,12 +3,15 @@ import matplotlib.pyplot as plt
 
 from utils.dataset import read_dataset
 
+import os
+
 
 def preprocess():
     dataset = read_dataset('adult')
     data = dataset['data']
 
     df = pd.DataFrame(data)
+    y = df['class'].copy()
     df = df.drop(columns=['class'])
     df = df.applymap(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
 
@@ -112,10 +115,13 @@ def preprocess():
 
     X_df.head()
 
-    with open('datasets/adult-clean_enc.csv', mode='w') as f:
+    with open(os.path.join('datasets', 'adult-clean_enc.csv'), mode='w') as f:
         X_df_enc.to_csv(f, index=False)
 
-    with open('datasets/adult-clean.csv', mode='w') as f:
+    with open(os.path.join('datasets', 'adult-clean.csv'), mode='w') as f:
         X_df.to_csv(f, index=False)
 
-    return 'adult-clean.csv', 'adult-clean_enc.csv'
+    with open(os.path.join('datasets, adult-clean-y.csv'), mode='w') as f:
+        y.to_csv(f, index=False)
+
+    return 'adult-clean.csv', 'adult-clean_enc.csv', 'adult-clean-y.csv'

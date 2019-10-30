@@ -16,7 +16,7 @@ def preprocess():
     # since we are still doing unsupervised methods (clustering), we will ignore labels y... except for sup. evaluation
     df = df.applymap(lambda x: x.decode('utf-8'))  # encode values as unicode strings instead of bytes
     X = df.loc[:, df.columns != 'class']
-    y = df.loc['class']  # for supervised evaluation of clustering
+    y = df.loc['class'].copy()  # for supervised evaluation of clustering
 
     # For all vars in X, the domain is ['b', 'o', 'x']
     # However, we will check it programatically.
@@ -52,6 +52,6 @@ def preprocess():
     X.to_csv(os.path.join('datasets', 'connect-4-clean.csv'), index=False)
     X_encoded.to_csv(os.path.join('datasets', 'connect-4-clean-enc.csv'), index=False)
     y.to_csv(os.path.join('datasets', 'connect-4-clean-y.csv'), index=False)
-    return 'connect-4-clean.csv', 'connect-4-clean-enc.csv'
+    return 'connect-4-clean.csv', 'connect-4-clean-enc.csv', 'connect-4-clean-y.csv'
 
 

@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram
-from sklearn.cluster import AgglomerativeClustering
-# Imports
 from sklearn.preprocessing import MinMaxScaler
 
 from utils.dataset import read_dataset
+
+import os
 
 
 def preprocess():
@@ -18,6 +17,7 @@ def preprocess():
     data = dataset['data']
 
     df = pd.DataFrame(data)
+    y = df['class'].copy()
     X = df.drop(columns=['class', 'region-pixel-count'])
     # X.head()
 
@@ -60,7 +60,9 @@ def preprocess():
     # plt.show()
 
     # Write data
-    with open('datasets/segment-clean.csv', mode='w') as f:
+    with open(os.path.join('datasets', 'segment-clean.csv'), mode='w') as f:
         X.to_csv(f, index=False)
+    with open(os.path.join('datasets', 'segment-clean-y.csv'), mode='w') as f:
+        y.to_csv(f, index=False)
 
-    return 'segment-clean.csv'
+    return 'segment-clean.csv', 'segment-clean-u.csv'
