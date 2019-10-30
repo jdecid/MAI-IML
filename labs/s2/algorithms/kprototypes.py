@@ -1,11 +1,10 @@
 import collections
 
-import numpy as np
 import pandas as pd
 
 from scipy import stats
 from algorithms.kmeans import KMeans
-from evaluate import *
+from utils.evaluate import *
 
 class KPrototypes(KMeans):
     def __init__(self, K, cat_idx, gamma=1):

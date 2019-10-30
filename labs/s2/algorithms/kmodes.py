@@ -1,13 +1,10 @@
 import collections
 
-import numpy as np
 import pandas as pd
 from scipy import stats
 
 from algorithms.kmeans import KMeans
-from utils import read_dataset
-from sklearn.metrics import *
-from evaluate import *
+from utils.evaluate import *
 class KModes(KMeans):
     def __init__(self, K: int, seed=1):
         """
