@@ -6,6 +6,7 @@ from scipy import stats
 from algorithms.kmeans import KMeans
 from utils.evaluate import *
 
+
 class KPrototypes(KMeans):
     def __init__(self, K, cat_idx, gamma=1):
         super().__init__(K)
@@ -18,10 +19,6 @@ class KPrototypes(KMeans):
         self.mask[self.cat_idx] = True
 
         super().fit(X, max_it)
-
-    def _init_centroids(self):
-        idx = np.random.choice(range(self.K), size=self.K, replace=False)
-        self.centroids = self.X[idx]
 
     def _compute_centroids(self, nearest):
         # Categorical
@@ -69,13 +66,11 @@ if __name__ == '__main__':
     dataset.iloc[:, 8] = dataset.iloc[:, 8].apply(lambda x: x.strip())
     print(len(dataset))
     X = dataset.iloc[:, :-1]
-    y = dataset.iloc[:,-1]
+    y = dataset.iloc[:, -1]
     print(set(y))
-    kprototypes = KPrototypes(K=3, cat_idx=[0,1,2,3,4,5,6])
+    kprototypes = KPrototypes(K=3, cat_idx=[0, 1, 2, 3, 4, 5, 6])
     res = kprototypes.fit_predict(X.values)
     c = collections.Counter()
     c.update(res)
     print(c)
     print(evaluate_supervised(labels_true=y, labels_pred=res))
-
-

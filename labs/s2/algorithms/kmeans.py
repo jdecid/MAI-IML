@@ -97,7 +97,9 @@ class KMeans:
 
     def _init_centroids(self):
         """Initialize centroids"""
-        self.centroids = np.random.random(size=(self.K, self.X.shape[1]))
+        # self.centroids = np.random.random(size=(self.K, self.X.shape[1]))
+        idx = np.random.choice(range(self.X.shape[0]), size=self.K, replace=False)
+        self.centroids = self.X[idx, :]
 
     def _calculate_distances(self, X: np.ndarray) -> np.ndarray:
         """
@@ -139,8 +141,9 @@ class KMeans:
         return classes, nearest, nearest_idx
 
     def _compute_centroids(self):
-        # TODO: Ugly AF
-        self.centroids = np.array(list(map(lambda x: np.mean(np.array(x), axis=0), self.nearest)))
+        for k in range(self.K):
+            if len(self.nearest[k]) > 0:  # TODO: Review if necessary
+                self.centroids[k, :] = np.mean(np.array(self.nearest[k]), axis=0)
 
     def _loss(self):
         # TODO: Avoid repeat, use previous calculated distances
@@ -196,13 +199,13 @@ class KMeans:
                            ys=centroids[k, 1],
                            zs=centroids[k, 2],
                            c=[self.colors[k]], s=150,
-                           marker='*', edgecolors='black')
+                           marker='*', edgecolors='black', zorder=2)
 
                 # Plot points associated with cluster k
                 ax.scatter(xs=points[nearest_idx[k], 0],
                            ys=points[nearest_idx[k], 1],
                            zs=points[nearest_idx[k], 2],
-                           c=[self.colors[k]], s=10, alpha=0.5)
+                           c=[self.colors[k]], s=10, alpha=0.5, zorder=1)
 
         # Visualization for 2D
         else:
@@ -211,12 +214,12 @@ class KMeans:
                 plt.scatter(x=centroids[k, 0],
                             y=centroids[k, 1],
                             c=[self.colors[k]], s=150,
-                            marker='*', edgecolors='black')
+                            marker='*', edgecolors='black', zorder=2)
 
                 # Plot points associated with cluster k
                 plt.scatter(x=points[nearest_idx[k], 0],
                             y=points[nearest_idx[k], 1],
-                            c=[self.colors[k]], s=10, alpha=0.5)
+                            c=[self.colors[k]], s=10, alpha=0.5, zorder=1)
 
         plt.show()
 
