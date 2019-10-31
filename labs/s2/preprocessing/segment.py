@@ -11,7 +11,7 @@ import os
 
 def preprocess():
     # Read data
-    dataset = read_dataset('segment', dataset_path=os.path.join('..', 'datasets'))
+    dataset = read_dataset('segment')
     data = dataset['data']
 
     df = pd.DataFrame(data)
@@ -31,11 +31,11 @@ def preprocess():
         X_numerical_as_categorical.iloc[:, i] = pd.qcut(x=X.iloc[:, i], q=5, duplicates='drop')
 
     # Write data
-    with open(os.path.join('..', 'datasets', 'segment_clean.csv'), mode='w') as f:
+    with open(os.path.join('datasets', 'segment_clean.csv'), mode='w') as f:
         X.to_csv(f, index=False)
-    with open(os.path.join('..', 'datasets', 'segment_clean_y.csv'), mode='w') as f:
+    with open(os.path.join('datasets', 'segment_clean_y.csv'), mode='w') as f:
         y.to_csv(f, index=False)
-    with open(os.path.join('..', 'datasets', 'segment_clean_cat.csv'), mode='w') as f:
+    with open(os.path.join('datasets', 'segment_clean_cat.csv'), mode='w') as f:
         X_numerical_as_categorical.to_csv(f, index=False)
 
     return 'segment_clean.csv', 'segment_clean_cat.csv', 'segment_clean_y.csv'

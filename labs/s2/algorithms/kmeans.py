@@ -1,3 +1,4 @@
+import os
 import logging
 
 from typing import List, Tuple
@@ -14,13 +15,15 @@ class KMeans:
 
     """
 
-    def __init__(self, K: int, max_it=1000, metric='euclidean', vis_dims=0, seed=1):
+    def __init__(self, K: int, name: str, max_it=1000, metric='euclidean', vis_dims=0, fig_save_path: str = None,
+                 seed=1):
         """
 
         :param K: Number of Clusters
         :param metric: Distance function
         :param max_it: Maximum number of iterations if hasn't reached convergence yet.
         :param vis_dims: Visualization level (0 no visualization, 2 for 2D and 3 for 3D).
+        :param fig_save_path: Whether to save figure
         :param seed: Fixed seed to allow reproducibility.
         """
         if K < 1:
@@ -33,8 +36,12 @@ class KMeans:
             raise ValueError('Accepted metrics are `euclidean`, `cityblock` and `cosine` distances')
 
         self.K = K
+        self.name = name
+
         self.metric = metric
+
         self.vis_dims = vis_dims
+        self.fig_sve_fig = fig_save_path
 
         self.seed = seed
 
@@ -221,7 +228,14 @@ class KMeans:
                             y=points[nearest_idx[k], 1],
                             c=[self.colors[k]], s=10, alpha=0.5, zorder=1)
 
-        plt.show()
+        if self.fig_sve_fig is None:
+            plt.show()
+        else:
+            directory = os.path.join(self.fig_sve_fig, self.__class__.__name__)
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+
+            plt.savefig(os.path.join(directory, f'{self.name}_{self.it}.png'))
 
     @staticmethod
     def _get_colors(n):

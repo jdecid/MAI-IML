@@ -125,4 +125,5 @@ def preprocess():
 
     with open(os.path.join('datasets', 'adult-clean-y.csv'), mode='w') as f:
         y.to_csv(f, index=False)
+
     return 'adult-clean.csv', 'adult-clean_enc.csv', 'adult-clean-y.csv'
