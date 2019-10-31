@@ -27,11 +27,10 @@ def run_kmeans(paths: List[Dict[str, str]], args=dict):
                           algorithm_params=alg_params,
                           metric='calinski_harabasz_score',
                           metric_params={'X': X.values},
-                          k_values=[2, 3, 4, 5],
+                          k_values=list(range(2, 10)),
                           goal='minimize')
 
     exit()
-
 
     # Evaluate
     # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
