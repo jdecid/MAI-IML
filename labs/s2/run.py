@@ -19,25 +19,19 @@ def run_kmeans(paths: List[Dict[str, str]], args=dict):
         X = pd.read_csv(os.path.join('datasets', path['X']))
         Y = pd.read_csv(os.path.join('datasets', path['Y'])).values.flatten()
 
-        kmeans = KMeans(K=7,
-                        name=path['name'],
-                        vis_dims=2,
-                        fig_save_path=args.output_path)
+        # Optimization of K
 
-        kmeans.fit_predict(X.values)
+        alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': args.output_path}
+        result = optimize(X=X.values,
+                          algorithm=KMeans,
+                          algorithm_params=alg_params,
+                          metric='calinski_harabasz_score',
+                          metric_params={'X': X.values},
+                          k_values=[2, 3, 4, 5],
+                          goal='minimize')
 
     exit()
 
-    # Optimization of K
-
-    n_classes = len(set(list(Y)))
-    result = optimize(X=X.values,
-                      algorithm=KMeans,
-                      algorithm_params={},
-                      metric='calinski_harabasz_score',
-                      metric_params={'X': X.values},
-                      k_values=[2, 3, 4, 5],
-                      goal='minimize')
 
     # Evaluate
     # With best k: unsupervised (supervised generally not possible unless best_k = n_classes

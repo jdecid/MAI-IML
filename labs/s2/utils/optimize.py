@@ -1,4 +1,6 @@
+import os
 import logging
+import matplotlib.pyplot as plt
 from typing import Type, List
 
 import numpy as np
@@ -9,6 +11,28 @@ from algorithms.kmeans import KMeans
 metrics = {
     'calinski_harabasz_score': calinski_harabasz_score
 }
+
+
+def plot_k_metrics(data, alg_name: str, alg_params: dict, metric: str):
+    plt.figure()
+
+    plt.title('Scores for different K')
+    plt.xlabel('K')
+    plt.ylabel(metrics[metric].__name__)
+
+    plt.plot(
+        list(map(lambda x: x['k'], data)),
+        list(map(lambda x: x['score'], data))
+    )
+
+    if alg_params['fig_save_path'] is None:
+        plt.show()
+    else:
+        directory = os.path.join(alg_params['fig_save_path'], alg_name)
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+        plt.savefig(os.path.join(directory, f'{alg_name}_K_evolution.png'))
+    plt.close()
 
 
 def optimize(X: np.ndarray,
@@ -45,6 +69,8 @@ def optimize(X: np.ndarray,
             'score': score,
             'prediction': prediction
         })
+
+    plot_k_metrics(executions, algorithm.__name__, algorithm_params, metric)
 
     return sorted(executions,
                   key=lambda x: x['score'],

@@ -41,7 +41,7 @@ class KMeans:
         self.metric = metric
 
         self.vis_dims = vis_dims
-        self.fig_sve_fig = fig_save_path
+        self.fig_save_path = fig_save_path
 
         self.seed = seed
 
@@ -228,14 +228,14 @@ class KMeans:
                             y=points[nearest_idx[k], 1],
                             c=[self.colors[k]], s=10, alpha=0.5, zorder=1)
 
-        if self.fig_sve_fig is None:
+        if self.fig_save_path is None:
             plt.show()
         else:
-            directory = os.path.join(self.fig_sve_fig, self.__class__.__name__)
+            directory = os.path.join(self.fig_save_path, self.__class__.__name__)
             if not os.path.exists(directory):
                 os.mkdir(directory)
-
-            plt.savefig(os.path.join(directory, f'{self.name}_{self.it}.png'))
+            plt.savefig(os.path.join(directory, f'{self.name}_K{self.K}_{self.it}.png'))
+        plt.close()
 
     @staticmethod
     def _get_colors(n):

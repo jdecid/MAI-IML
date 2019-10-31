@@ -1,3 +1,0 @@
-INFO:root:Running KMeans experiments
-INFO:root:  0/1000 Loss: 1364.1539126673174
-INFO:root:  1/1000 Loss: 1140.3742457456474
