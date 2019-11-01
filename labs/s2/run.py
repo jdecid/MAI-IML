@@ -17,31 +17,28 @@ def run_kmeans(paths: List[Dict[str, str]], args=dict):
 
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X']))
-        Y = pd.read_csv(os.path.join('datasets', path['Y'])).values.flatten()
+        Y = pd.read_csv(os.path.join('datasets', path['Y']))
 
         # Optimization of K
 
         alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': args.output_path}
-        result = optimize(X=X.values,
-                          algorithm=KMeans,
-                          algorithm_params=alg_params,
-                          metric='calinski_harabasz_score',
-                          metric_params={'X': X.values},
-                          k_values=list(range(2, 10)),
-                          goal='minimize')
+        results = optimize(X=X.values,
+                           algorithm=KMeans,
+                           algorithm_params=alg_params,
+                           metric='calinski_harabasz_score',
+                           metric_params={'X': X.values},
+                           k_values=list(range(2, 10)),
+                           goal='minimize')
 
-    exit()
+        # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
+        res = evaluate.evaluate_unsupervised(X=X, labels=results[0]['prediction'])
+        print(res)
 
-    # Evaluate
-    # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
-    result_best_k = result[0]
-    print(evaluate.evaluate_unsupervised(X=X, labels=result_best_k['prediction']))
-    # With k = n_classes
-    for res in result:
-        if res['k'] == n_classes:
-            print()
-            print(evaluate.evaluate_supervised(labels_true=y, labels_pred=res['prediction']))
-            break
+        # With k = n_classes
+        n_classes = len(Y[Y.columns[0]].unique())
+        real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
+        res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'])
+        print(res)
 
 
 def main(args):
