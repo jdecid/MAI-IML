@@ -8,6 +8,8 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import distance
 from sklearn.decomposition import PCA
 
+from utils.plotting import get_colors
+
 
 class KMeans:
     """
@@ -15,14 +17,15 @@ class KMeans:
     """
 
     def __init__(self, K: int, name: str, max_it=1000, metric='euclidean', vis_dims=0, fig_save_path: str = None,
-                 seed=1):
+                 return_distances=False, seed=1):
         """
 
         :param K: Number of Clusters
         :param metric: Distance function
         :param max_it: Maximum number of iterations if hasn't reached convergence yet.
         :param vis_dims: Visualization level (0 no visualization, 2 for 2D and 3 for 3D).
-        :param fig_save_path: Whether to save figure
+        :param fig_save_path: Whether to save figure.
+        :param return_distances: True if distances are returned in a tuple in predict method.
         :param seed: Fixed seed to allow reproducibility.
         """
         if K < 1:
@@ -42,6 +45,7 @@ class KMeans:
         self.vis_dims = vis_dims
         self.fig_save_path = fig_save_path
 
+        self.return_distances = return_distances
         self.seed = seed
 
         self.it = 0
@@ -51,7 +55,7 @@ class KMeans:
         self.centroids = None
         self.nearest = None
 
-        self.colors = self._get_colors(K)
+        self.colors = get_colors(K)
 
     def fit(self, X: np.ndarray):
         np.random.seed(self.seed)
@@ -78,12 +82,10 @@ class KMeans:
             else:
                 previous_centroids = self.centroids
 
-    def predict(self, X: np.ndarray, return_distances=False) -> Union[List[int],
-                                                                      Tuple[List[int], np.ndarray]]:
+    def predict(self, X: np.ndarray) -> Union[List[int], Tuple[List[int], np.ndarray]]:
         """
         Assign clusters to a list of observations.
         :param X: 2D data array of size (rows, features).
-        :param return_distances: True if distances are returned in a tuple.
         :return: Cluster indexes assigned to each row of X.
         """
         if self.centroids is None:
@@ -92,17 +94,16 @@ class KMeans:
         distances = self._calculate_distances(X)
         classes, _, _ = self._get_nearest(X, distances)
 
-        return (classes, distances) if return_distances else classes
+        return (classes, distances) if self.return_distances else classes
 
-    def fit_predict(self, X: np.ndarray, return_distances=False) -> List[int]:
+    def fit_predict(self, X: np.ndarray) -> List[int]:
         """
         Fit the model with provided data and return their assigned clusters.
         :param X: 2D data array of size (rows, features).
-        :param return_distances: True if distances are returned in a tuple.
         :return: Cluster indexes assigned to each row of X.
         """
         self.fit(X)
-        return self.predict(X, return_distances=return_distances)
+        return self.predict(X)
 
     def _init_centroids(self):
         """Initialize centroids"""
@@ -238,12 +239,3 @@ class KMeans:
                 os.mkdir(directory)
             plt.savefig(os.path.join(directory, f'{self.name}_K{self.K}_{self.it}.png'))
         plt.close()
-
-    @staticmethod
-    def _get_colors(n):
-        """
-        Sample RGBA colors from HSV matplotlib colormap.
-        :param n: Number of colors to obtain.
-        :return: List of n RGBA colors.
-        """
-        return [plt.cm.hsv(x / n) for x in range(n)]

@@ -1,22 +1,26 @@
 import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
 from algorithms.kmeans import KMeans
+from utils.plotting import get_colors
 
 
 class FuzzyCMeans(KMeans):
-    def __init__(self, C: int, m: int, vis_dims: int, epsilon=0.01, seed=1):
+    def __init__(self, C: int, m: int, epsilon=0.01, **kwargs):
         """
 
         :param C: Number of Clusters
         :param m: Degree of fuzziness (1 - crisp)
         """
-        super().__init__(K=C, vis_dims=vis_dims, seed=seed)
         self.m = m
         self.epsilon = epsilon
+
+        kwargs['K'] = C
+        super().__init__(**kwargs)
 
     def _init_centroids(self):
         """Initialize centroids (V) and c-partition matrix U"""
@@ -89,7 +93,7 @@ class FuzzyCMeans(KMeans):
 
         f, ax = plt.subplots(self.K, 1, figsize=(self.K, 6))
 
-        colors = self._get_colors(4)
+        colors = get_colors(4)
         ax[0].set_title('Membership Functions')
 
         for idx in range(self.K):

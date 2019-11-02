@@ -1,6 +1,3 @@
-import collections
-
-import pandas as pd
 from scipy import stats
 
 from algorithms.kmeans import KMeans
@@ -8,14 +5,6 @@ from utils.evaluate import *
 
 
 class KModes(KMeans):
-    def __init__(self, K: int, seed=1, **kwargs):
-        """
-
-        :param K: Number of Clusters
-        :param seed: Fixed seed to allow reproducibility.
-        """
-        super().__init__(K, seed=seed, **kwargs)
-
     def _compute_centroids(self):
         for k in range(self.K):
             if self.nearest[k]:
@@ -29,29 +18,3 @@ class KModes(KMeans):
         :return: Distance (dissimilarity) between a and b.
         """
         return sum(a != b)
-
-
-if __name__ == '__main__':
-    ''''
-    dataset = pd.read_csv('../datasets/car.data')
-    X = dataset.iloc[:, :6]
-
-    kmodes = KModes(K=4, seed=1)
-    res = kmodes.fit_predict(X.values)
-    with open('res.txt', 'w') as f:
-        f.write(str(res))
-    c = collections.Counter()
-    c.update(res)
-    print(c)
-    Y = dataset.iloc[:, 6]
-    print(Y.value_counts())
-    '''
-    dataset = pd.read_csv('../tests/datasets/house-votes-84.data')
-    X = dataset.iloc[:, 1:]
-    y = dataset.iloc[:, 0]
-    kmodes = KModes(K=2, seed=1)
-    res = kmodes.fit_predict(X.values)
-    c = collections.Counter()
-    c.update(res)
-    print(c)
-    print(evaluate_supervised(labels_true=y, labels_pred=res))
