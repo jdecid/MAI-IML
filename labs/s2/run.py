@@ -44,15 +44,17 @@ def run_kmeans(paths: List[Dict[str, str]], args=dict):
 def main(args):
     """Runs EVERYTHING (preprocessing, clustering, evaluation,...), saves images, logs, results etc. for the report"""
     print('Preprocessing...')
-    # file_c4_cat, file_c4_num = connect_4.preprocess()
     file_segment_num, file_segment_cat, file_segment_y = segment.preprocess()
-    # file_adult, file_adult_cat, file_adult_num = adult.preprocess()
+    file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = adult.preprocess()
+    file_connect_4, file_connect_4_num, file_connect_4_y = connect_4.preprocess()
 
-    print('Applying hierarchical clustering...')
+    print('Applying agglomerative clustering...')
     # TODO
-
+    print('Applying K-Means...')
     run_kmeans(paths=[
-        {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y}
+        {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
+        {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y},
+        {'name': 'connect_4', 'X': file_connect_4_num, 'Y': file_connect_4_y}
     ], args=args)
 
 
