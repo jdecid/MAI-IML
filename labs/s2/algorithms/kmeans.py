@@ -16,8 +16,8 @@ class KMeans:
 
     """
 
-    def __init__(self, K: int, name: str, max_it=1000, metric='euclidean', vis_dims=0, fig_save_path: str = None,
-                 return_distances=False, seed=1):
+    def __init__(self, K: int, name: str, max_it=1000, metric='euclidean',
+                 vis_dims=0, fig_save_path: str = None, seed=1):
         """
 
         :param K: Number of Clusters
@@ -25,7 +25,6 @@ class KMeans:
         :param max_it: Maximum number of iterations if hasn't reached convergence yet.
         :param vis_dims: Visualization level (0 no visualization, 2 for 2D and 3 for 3D).
         :param fig_save_path: Whether to save figure.
-        :param return_distances: True if distances are returned in a tuple in predict method.
         :param seed: Fixed seed to allow reproducibility.
         """
         if K < 1:
@@ -45,7 +44,6 @@ class KMeans:
         self.vis_dims = vis_dims
         self.fig_save_path = fig_save_path
 
-        self.return_distances = return_distances
         self.seed = seed
 
         self.it = 0
@@ -94,7 +92,7 @@ class KMeans:
         distances = self._calculate_distances(X)
         classes, _, _ = self._get_nearest(X, distances)
 
-        return (classes, distances) if self.return_distances else classes
+        return classes
 
     def fit_predict(self, X: np.ndarray) -> List[int]:
         """
@@ -104,6 +102,14 @@ class KMeans:
         """
         self.fit(X)
         return self.predict(X)
+
+    def compute_point_wise_distances(self):
+        n = self.X.shape[0]
+        distances = np.zeros(shape=(n, n))
+        for i in range(n):
+            for j in range(n):
+                distances[i, j] = self._distance(a=self.X[i, :], b=self.X[j, :])
+        return distances
 
     def _init_centroids(self):
         """Initialize centroids"""
