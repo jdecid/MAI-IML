@@ -1,7 +1,6 @@
-import os
 import logging
-
-from typing import List, Tuple
+import os
+from typing import List, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -79,10 +78,12 @@ class KMeans:
             else:
                 previous_centroids = self.centroids
 
-    def predict(self, X: np.ndarray) -> List[int]:
+    def predict(self, X: np.ndarray, return_distances=False) -> Union[List[int],
+                                                                      Tuple[List[int], np.ndarray]]:
         """
         Assign clusters to a list of observations.
         :param X: 2D data array of size (rows, features).
+        :param return_distances: True if distances are returned in a tuple.
         :return: Cluster indexes assigned to each row of X.
         """
         if self.centroids is None:
@@ -91,16 +92,17 @@ class KMeans:
         distances = self._calculate_distances(X)
         classes, _, _ = self._get_nearest(X, distances)
 
-        return classes
+        return (classes, distances) if return_distances else classes
 
-    def fit_predict(self, X: np.ndarray) -> List[int]:
+    def fit_predict(self, X: np.ndarray, return_distances=False) -> List[int]:
         """
         Fit the model with provided data and return their assigned clusters.
         :param X: 2D data array of size (rows, features).
+        :param return_distances: True if distances are returned in a tuple.
         :return: Cluster indexes assigned to each row of X.
         """
         self.fit(X)
-        return self.predict(X)
+        return self.predict(X, return_distances=return_distances)
 
     def _init_centroids(self):
         """Initialize centroids"""

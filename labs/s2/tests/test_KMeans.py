@@ -19,18 +19,18 @@ class KMeansTest(unittest.TestCase):
 
     def test_kmeans_with_invalid_clusters(self):
         with self.assertRaises(ValueError):
-            _ = KMeans(K=0)
+            _ = KMeans(K=0, name='test')
 
     def test_kmeans_with_invalid_visualization_dimensions(self):
         with self.assertRaises(ValueError):
-            _ = KMeans(K=0)
+            _ = KMeans(K=0, name='test')
 
     def test_kmeans_with_invalid_metric(self):
         with self.assertRaises(ValueError):
-            _ = KMeans(K=3, metric='mahalanobis')
+            _ = KMeans(K=3, metric='mahalanobis', name='test')
 
     def test_predict_before_fit_throws_error(self):
-        kmeans = KMeans(K=3, metric='euclidean', vis_dims=0, seed=self.seed)
+        kmeans = KMeans(K=3, metric='euclidean', vis_dims=0, seed=self.seed, name='test')
 
         with self.assertRaises(Exception):
             kmeans.predict(self.dataset)
@@ -39,7 +39,7 @@ class KMeansTest(unittest.TestCase):
         with open('s2/tests/datasets/iris.pkl', mode='rb') as f:
             expected_predictions = pickle.load(f)
 
-        kmeans = KMeans(K=3, metric='euclidean', vis_dims=0, seed=self.seed)
+        kmeans = KMeans(K=3, metric='euclidean', vis_dims=0, seed=self.seed, name='test')
 
         predictions = kmeans.fit_predict(self.dataset)
 
