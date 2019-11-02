@@ -39,7 +39,7 @@ def plot_k_metrics(data, alg_name: str, alg_params: dict, metric: str):
 
 def optimize(X: np.ndarray,
              algorithm: Type[KMeans], algorithm_params: dict, metric: str, metric_params: dict, k_values: List[int],
-             goal: str, precompute_distances: bool = False) -> List[dict]:
+             goal: str, precomputed_distances: np.ndarray = None) -> List[dict]:
     """
     Optimize K value for the same data, algorithm and metric.
     :param X: 2D data matrix of size (#observations, #features).
@@ -56,13 +56,14 @@ def optimize(X: np.ndarray,
     logging.info(f'Optimizing {algorithm.__name__} with {metric} for K in {k_values}')
 
     executions = []
+
+    if precomputed_distances is not None:
+        metric_params['X'] = precomputed_distances
+
     for k in k_values:
         logging.info(f'Optimizing K = {k}')
 
         alg = algorithm(K=k, **algorithm_params)
-
-        if precompute_distances:
-            metric_params['X'] = alg.compute_point_wise_distances()
 
         prediction = alg.fit_predict(X)
 

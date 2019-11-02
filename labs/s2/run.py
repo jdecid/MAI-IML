@@ -7,6 +7,7 @@ from typing import List, Dict
 import pandas as pd
 
 from algorithms.kmeans import KMeans
+from algorithms.kmodes import KModes
 from algorithms.kprototypes import KPrototypes
 from preprocessing import adult, connect_4, segment
 from utils import evaluate
@@ -14,8 +15,20 @@ from utils.optimize import optimize
 
 from algorithms.agglomerative import agglomerative_clustering
 
+from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score, silhouette_score
+
+from algorithms.kmeans import KMeans
+
+metrics = {
+    'calinski_harabasz_score': calinski_harabasz_score,
+    'davies_bouldin_score': davies_bouldin_score,
+    'silhouette_score': silhouette_score
+}
+
+# TODO: prints -> logs, or tables, or something, PRETTIFY somehow
 
 def run_agglomerative(paths: List[Dict[str, str]], args=dict):
+    # TODO: SUBSET of connect-4, otherwise memory error! Also, save this subset because the professor wants to inspect t
     logging.info('Running Agglomerative experiments')
 
     for path in paths:
@@ -66,6 +79,40 @@ def run_kmeans(paths: List[Dict[str, str]], args=dict):
         print(res)
 
 
+# TODO: isn't run_kmodes extremely slow?
+def run_kmodes(paths: List[Dict[str, str]], args=dict):
+    logging.info('Running KModes experiments')
+
+    for path in paths:
+        X = pd.read_csv(os.path.join('datasets', path['X']))
+        Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
+
+        # Optimization of K
+
+        alg_params = {'name': path['name'], 'fig_save_path': args.output_path}
+        alg = KModes(K=1, **alg_params)
+        precomputed_distances = alg.compute_point_wise_distances(X.values)
+        results = optimize(X=X.values,
+                           algorithm=KModes,
+                           algorithm_params=alg_params,
+                           metric='silhouette_score',
+                           metric_params={'metric': 'precomputed'},
+                           k_values=[2],#list(range(2, 10)),
+                           goal='minimize',
+                           precomputed_distances=precomputed_distances)
+
+        # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
+        # Only silhouette_score
+
+        print(results[0]['score'])
+
+        # With k = n_classes
+        n_classes = len(Y[Y.columns[0]].unique())
+        real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
+        res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'][0])
+        print(res)
+
+
 def run_kprototypes(paths: List[Dict[str, str]], args=dict):
     logging.info('Running K-Prototypes experiments')
 
@@ -75,9 +122,42 @@ def run_kprototypes(paths: List[Dict[str, str]], args=dict):
 
         # Optimization of K
 
-        alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': args.output_path}
+        alg_params = {'name': path['name'], 'fig_save_path': args.output_path}
+        alg = KPrototypes(K=1, **alg_params)
+        precomputed_distances = alg.compute_point_wise_distances(X.values)
         results = optimize(X=X.values,
                            algorithm=KPrototypes,
+                           algorithm_params=alg_params,
+                           metric='silhouette_score',
+                           metric_params={'metric': 'precomputed'},
+                           k_values=[2],  # list(range(2, 10)),
+                           goal='minimize',
+                           precomputed_distances=precomputed_distances)
+
+        # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
+        # Only silhouette_score
+
+        print(results[0]['score'])
+
+        # With k = n_classes
+        n_classes = len(Y[Y.columns[0]].unique())
+        real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
+        res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'][0])
+        print(res)
+
+
+def run_fcm(paths: List[Dict[str, str]], args=dict):
+    logging.info('Running Fuzzy C-Means experiments')
+
+    for path in paths:
+        X = pd.read_csv(os.path.join('datasets', path['X']))
+        Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
+
+        # Optimization of C
+
+        alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': args.output_path}
+        results = optimize(X=X.values,
+                           algorithm=KMeans,
                            algorithm_params=alg_params,
                            metric='calinski_harabasz_score',
                            metric_params={'X': X.values},
@@ -99,25 +179,31 @@ def main(args):
     """Runs EVERYTHING (preprocessing, clustering, evaluation,...), saves images, logs, results etc. for the report"""
     print('Preprocessing...')
     file_segment_num, file_segment_cat, file_segment_y = segment.preprocess()
-    file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = adult.preprocess()
-    file_connect_4, file_connect_4_num, file_connect_4_y = connect_4.preprocess()
+    #file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = adult.preprocess()
+    #file_connect_4, file_connect_4_num, file_connect_4_y = connect_4.preprocess()
 
-    run_agglomerative(paths=[
-        {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
+    # run_agglomerative(paths=[
+    #     {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
+    #     # {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y},
+    #     # {'name': 'connect_4', 'X': file_connect_4_num, 'Y': file_connect_4_y}
+    # ], args=args)
+    #
+    # run_kmeans(paths=[
+    #     {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
+    #     {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y},
+    #     {'name': 'connect_4', 'X': file_connect_4_num, 'Y': file_connect_4_y}
+    # ], args=args)
+
+    run_kmodes(paths=[
+        {'name': 'segment', 'X': file_segment_cat, 'Y': file_segment_y},
         # {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y},
         # {'name': 'connect_4', 'X': file_connect_4_num, 'Y': file_connect_4_y}
     ], args=args)
-
-    run_kmeans(paths=[
-        {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
-        {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y},
-        {'name': 'connect_4', 'X': file_connect_4_num, 'Y': file_connect_4_y}
-    ], args=args)
-
+    exit()
     run_kprototypes(paths=[
         {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
-        {'name': 'adult', 'X': file_adult_mix, 'Y': file_adult_y},
-        {'name': 'connect_4', 'X': file_connect_4, 'Y': file_connect_4_y}
+        #{'name': 'adult', 'X': file_adult_mix, 'Y': file_adult_y},
+        #{'name': 'connect_4', 'X': file_connect_4, 'Y': file_connect_4_y}
     ], args=args)
 
 
