@@ -11,13 +11,15 @@ from preprocessing import adult, connect_4, segment
 from utils import evaluate
 from utils.optimize import optimize
 
+from algorithms.agglomerative import agglomerative_clustering
+
 
 def run_kmeans(paths: List[Dict[str, str]], args=dict):
     logging.info('Running KMeans experiments')
 
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X']))
-        Y = pd.read_csv(os.path.join('datasets', path['Y']))
+        Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
 
         # Optimization of K
 
@@ -41,15 +43,42 @@ def run_kmeans(paths: List[Dict[str, str]], args=dict):
         print(res)
 
 
+def run_agglomerative(paths: List[Dict[str, str]], args=dict):
+    logging.info('Running Agglomerative experiments')
+
+    for path in paths:
+        X = pd.read_csv(os.path.join('datasets', path['X']))
+        Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
+
+        # Instead of optimizing the number of clusters, this time we are going to test other parameter as suggested
+        # in the assignment. In particular, we are going to experiment with different affinities and linkages
+        n_classes = len(Y[Y.columns[0]].unique())
+        results = agglomerative_clustering(X=X, K=n_classes, fig_save_path=args.output_path)
+
+        for result in results:
+            print(f'Results with affinity {result["affinity"]} and linkage {result["linkage"]}')
+            # Supervised evaluation (we are using k = # classes)
+            res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=result['prediction'])
+            print(res)
+            # Unsupervised
+            res = evaluate.evaluate_unsupervised(X=X, labels=result['prediction'])
+            print(res)
+
+
 def main(args):
     """Runs EVERYTHING (preprocessing, clustering, evaluation,...), saves images, logs, results etc. for the report"""
     print('Preprocessing...')
     file_segment_num, file_segment_cat, file_segment_y = segment.preprocess()
-    file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = adult.preprocess()
-    file_connect_4, file_connect_4_num, file_connect_4_y = connect_4.preprocess()
+    #file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = adult.preprocess()
+    #file_connect_4, file_connect_4_num, file_connect_4_y = connect_4.preprocess()
 
     print('Applying agglomerative clustering...')
-    # TODO
+    run_agglomerative(paths=[
+        {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
+        #{'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y},
+        #{'name': 'connect_4', 'X': file_connect_4_num, 'Y': file_connect_4_y}
+    ], args=args)
+    exit()
     print('Applying K-Means...')
     run_kmeans(paths=[
         {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
