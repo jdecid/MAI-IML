@@ -8,18 +8,18 @@ from utils.evaluate import *
 
 
 class KModes(KMeans):
-    def __init__(self, K: int, seed=1):
+    def __init__(self, K: int, seed=1, **kwargs):
         """
 
         :param K: Number of Clusters
         :param seed: Fixed seed to allow reproducibility.
         """
-        super().__init__(K, seed=seed)
+        super().__init__(K, seed=seed, **kwargs)
 
-    def _compute_centroids(self, nearest):
+    def _compute_centroids(self):
         for k in range(self.K):
-            if nearest[k]:
-                self.centroids[k, :] = stats.mode(nearest[k]).mode[0]
+            if self.nearest[k]:
+                self.centroids[k, :] = stats.mode(self.nearest[k]).mode[0]
 
     def _distance(self, a: np.ndarray, b: np.ndarray) -> float:
         """
