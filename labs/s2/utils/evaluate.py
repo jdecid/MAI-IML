@@ -1,5 +1,6 @@
 from sklearn.metrics import *
 import numpy as np
+from math import log
 
 
 def get_metrics_from_mat(contingency_matrix):
@@ -28,7 +29,24 @@ def evaluate_unsupervised(X, labels):
     return res
 
 
-def evaluate(labels_true, labels_pred, X):
-    eval_sup = evaluate_supervised(labels_true, labels_pred)
-    eval_unsup = evaluate_unsupervised(X, labels_pred)
-    return dict(eval_sup=eval_sup, eval_unsup=eval_unsup)
+def normalized_partition_coefficient(u):
+    '''
+    :param u: membership matrix
+    :return: normalized (range: [0,1] where 1 is hard) partition coeficient
+    Note: # clusters = u.shape[0], # rows = u.shape[1]
+    '''
+    return (np.sum(u**2)/u.shape[1] - 1/u.shape[0])/(1-1/u.shape[0])
+
+
+def partition_entropy(u):
+    '''
+    :param u: membership matrix, with shape (# clusters, # rows)
+    :return: partition entropy
+    '''
+    return -np.sum(u * log(u)/u.shape[1])
+
+
+def evaluate_soft(u):
+    res = dict(normalized_partition_coefficient=normalized_partition_coefficient(u),
+               partition_entropy=partition_entropy(u))
+    return res
