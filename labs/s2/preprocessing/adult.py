@@ -1,21 +1,34 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Adult dataset preprocessing
+
+# In[1]:
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
 from utils.dataset import read_dataset
 
-import os
-
-# TODO: From notebook
 
 def preprocess():
+    # In[3]:
+
     dataset = read_dataset('adult')
     data = dataset['data']
 
-    df = pd.DataFrame(data)
+    # In[33]:
 
+    df = pd.DataFrame(data)
     df = df.applymap(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
+
     y = df['class'].copy()
+
     df = df.drop(columns=['class'])
+
+    df.head()
+
+    # In[8]:
 
     categorical_features = ['workclass', 'education', 'marital-status', 'occupation',
                             'relationship', 'race', 'sex', 'native-country']
@@ -23,6 +36,8 @@ def preprocess():
     numerical_features = ['age', 'fnlwgt', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
 
     # ### Check missing values
+
+    # In[9]:
 
     missing = df.isnull().sum()
     missing_rows = df.isnull().any(axis=1).sum()
@@ -35,24 +50,26 @@ def preprocess():
     print(f'Rows with missing values: {percent_missing_rows:.4f}% ({missing_rows}/{df.shape[0]})')
 
     # The dataset `adult` has a few missing values in three categorical attributes: `workclass`, `occupation` and `native-country`. There are several ways to deal with missing values for categorical attributes:
-    # 
+    #
     # 1. **Deletion: Remove rows containing missing values**
-    # 
+    #
     # Given huge datasets, if the number of missing values is small, the simplest action to perform is to remove rows which contain some of these. Remove data leads to lose of information, but if the percentage is so small, we are adding just some negligible bias. In fact, this is our case, where we would delete just 7.5% of the rows. Despite of being a small percentage, it may not be negligible, so we will also consider other methods.
-    # 
+    #
     # **2. Deletion: Remove columns with > 75% missing values**
-    # 
+    #
     # If a column (or attribute) has almost none of its values, we can consider that information as 'useless', as creating syntetically most of the values from a small unrepresentative set will probably lead us to worse results than just dropping that attribute. We can forget about this method, as the column with more NAs has just a 5.7307% of missing values.
-    # 
+    #
     # **2. K-NN Imputation**
-    # 
+    #
     # For imputing categorical variables, we can use a neighbours algorithm, computing with a *distance function* the K-th more similar rows and inputing what the majority of these K rows has in that attribute.
-    # 
+    #
     # We will select this one
 
     # ### Outliers
 
     # Before normalizing or standarizing the numerical data we must check the possible presence of outliers. *E.g.* If we don't do this analysis, when calculating the mean and std to standarize we may have into account it may appear shifted due to some points that differ significantly from the distribution.
+
+    # In[10]:
 
     f, ax = plt.subplots(3, 2, figsize=(15, 10))
 
@@ -77,8 +94,12 @@ def preprocess():
     # - sex
     # - native-country
 
+    # In[11]:
+
     for feat in categorical_features:
         print(f'{feat:14} has {len(df[feat].unique()):2} unique values')
+
+    # In[12]:
 
     from sklearn.preprocessing import OneHotEncoder
 
@@ -100,8 +121,12 @@ def preprocess():
     # - capital-loss
     # - hours-per-week
 
+    # In[13]:
+
     for feat in numerical_features:
         print(f'Range({feat}) in [{df[feat].min()}, {df[feat].max()}]')
+
+    # In[23]:
 
     from sklearn.preprocessing import MinMaxScaler
 
@@ -112,18 +137,25 @@ def preprocess():
 
     X_numerical.head()
 
-    X_df_enc = pd.concat((X_categorical, X_numerical), axis=1)
-    X_df = pd.concat((df[categorical_features], X_numerical), axis=1)
+    # In[24]:
 
-    X_df.head()
+    X_numerical_as_categorical = X_numerical.copy()
 
-    with open(os.path.join('datasets', 'adult-clean_enc.csv'), mode='w') as f:
-        X_df_enc.to_csv(f, index=False)
+    for feat in numerical_features:
+        X_numerical_as_categorical[feat] = pd.qcut(x=X_numerical[feat], q=5, duplicates='drop')
 
-    with open(os.path.join('datasets', 'adult-clean.csv'), mode='w') as f:
-        X_df.to_csv(f, index=False)
+    # In[26]:
 
-    with open(os.path.join('datasets', 'adult-clean-y.csv'), mode='w') as f:
-        y.to_csv(f, index=False)
+    X_df = pd.concat((X_categorical, X_numerical), axis=1)
+    X_df_num = pd.concat((df[categorical_features], X_numerical), axis=1)
+    X_df_cat = pd.concat((df[categorical_features], X_numerical_as_categorical), axis=1)
 
-    return 'adult-clean.csv', 'adult-clean_enc.csv', 'adult-clean-y.csv'
+    # In[34]:
+
+    X_df.to_csv('datasets/adult_clean_num.csv', index=False)
+    X_df_num.to_csv('datasets/adult_clean.csv', index=False)
+    X_df_cat.to_csv('datasets/adult_clean_cat.csv', index=False)
+
+    y.to_csv('datasets/adult_clean_y.csv', index=False)
+
+    return 'adult_clean_num.csv', 'adult_clean_cat.csv', 'adult_clean.csv', 'adult_clean_y.csv'
