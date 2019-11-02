@@ -4,12 +4,14 @@ import matplotlib.pyplot as plt
 from typing import Type, List
 
 import numpy as np
-from sklearn.metrics import calinski_harabasz_score
+from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score, silhouette_score
 
 from algorithms.kmeans import KMeans
 
 metrics = {
-    'calinski_harabasz_score': calinski_harabasz_score
+    'calinski_harabasz_score': calinski_harabasz_score,
+    'davies_bouldin_score':  davies_bouldin_score,
+    'silhouette_score': silhouette_score
 }
 
 
