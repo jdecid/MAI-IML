@@ -103,12 +103,12 @@ class KMeans:
         self.fit(X)
         return self.predict(X)
 
-    def compute_point_wise_distances(self):
-        n = self.X.shape[0]
+    def compute_point_wise_distances(self, X):
+        n = X.shape[0]
         distances = np.zeros(shape=(n, n))
         for i in range(n):
             for j in range(n):
-                distances[i, j] = self._distance(a=self.X[i, :], b=self.X[j, :])
+                distances[i, j] = self._distance(a=X[i, :], b=X[j, :])
         return distances
 
     def _init_centroids(self):
