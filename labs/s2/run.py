@@ -73,15 +73,12 @@ def generate_results(X, Y, results, results_to_save, fuzzy_eval=False):
 
 
 def run_agglomerative(paths: List[Dict[str, str]], params):
-    # TODO: SUBSET of connect-4, otherwise memory error! Also, save this subset because the professor wants to inspect t
     message = 'Running Agglomerative experiments'
     print(message + '...')
     logging.info(message)
-    results_to_save = """
-        ### Agglomerative Clustering experiments results
-        Except for the number of clusters, affinity and linkage, the other parameters are the default ones.
-        We set #clusters as #classes.
-    """
+    results_to_save = '### Agglomerative Clustering experiments results\n'
+    results_to_save += 'Default parameters except for the number of clusters, affinity and linkage.\n'
+    results_to_save += 'We set #clusters as #classes.'
 
     for path in paths:
         results_to_save += f'Optimization of K with calinski_harabasz_score:\n{optimize_dict_to_table(results)}\n'
@@ -113,10 +110,8 @@ def run_kmeans(paths: List[Dict[str, str]], params):
     print(message + '...')
     logging.info(message)
 
-    results_to_save = """
-        ### K-Means experiments results
-        Except K, the other parameters are the default ones (eg. euclidean distance)
-    """
+    results_to_save = '### K-Means experiments results'
+    results_to_save += 'Except K, the other parameters are the default ones (eg. euclidean distance)'
 
     for path in paths:
         results_to_save += f'{path["name"]} dataset\n'
@@ -224,8 +219,8 @@ def run_fcm(paths: List[Dict[str, str]], params):
     print(message)
     logging.info(message)
 
-    results_to_save = '### Fuzzy C-Means experiments results'
-    results_to_save += 'Except *K* and *m* the other parameters are the default ones (eg. euclidean distance)'
+    results_to_save = '### Fuzzy C-Means experiments results\n'
+    results_to_save += 'Except *K* and *m* the other parameters are the default ones (eg. euclidean distance)\n'
 
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X']))
