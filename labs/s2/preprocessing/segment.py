@@ -1,5 +1,13 @@
-#!/usr/bin/env python
-# coding: utf-8
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+from scipy.cluster.hierarchy import dendrogram
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.preprocessing import MinMaxScaler
+
+from utils.dataset import read_dataset
+
+import os
 
 # # Segment
 # 
@@ -46,26 +54,10 @@
 # - no need to treat different types fo data (all numerical)
 # - no need to treat missing values (no missing values in this dataset according to problem statement)
 
-# In[61]:
 
 def preprocess():
-    # In[62]:
-
-    import numpy as np
-    import pandas as pd
-    from matplotlib import pyplot as plt
-    from scipy.cluster.hierarchy import dendrogram
-    from sklearn.cluster import AgglomerativeClustering
-    from sklearn.preprocessing import MinMaxScaler
-
-    from utils.dataset import read_dataset
-
-    # In[63]:
-
     dataset = read_dataset('segment')
     data = dataset['data']
-
-    # In[57]:
 
     df = pd.DataFrame(data)
 
@@ -73,27 +65,19 @@ def preprocess():
 
     df = df.drop(columns=['class', 'region-pixel-count'])
 
-    # In[71]:
-
     scaler = MinMaxScaler()
 
     X_num = scaler.fit_transform(df)
     df_X_num = pd.DataFrame(X_num, columns=df.columns)
-
-    df.head()
-
-    # In[73]:
 
     df_X_cat = df_X_num.copy()
 
     for col in list(df.columns):
         df_X_cat[col] = pd.qcut(x=df_X_num[col], q=5, duplicates='drop')
 
-    # In[74]:
+    df_X_num.to_csv(os.path.join('datasets', 'segment_clean_num.csv'), index=False)
+    df_X_cat.to_csv(os.path.join('datasets', 'segment_clean_cat.csv'), index=False)
 
-    df_X_num.to_csv('datasets/segment_clean_num.csv', index=False)
-    df_X_cat.to_csv('datasets/segment_clean_cat.csv', index=False)
-
-    y.to_csv('datasets/segment_clean_y.csv', index=False)
+    y.to_csv(os.path.join('datasets', 'segment_clean_y.csv'), index=False)
 
     return 'segment_clean_num.csv', 'segment_clean_cat.csv', 'segment_clean_y.csv'

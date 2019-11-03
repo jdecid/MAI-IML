@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 # from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from utils.dataset import read_dataset
 import os

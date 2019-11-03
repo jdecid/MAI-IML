@@ -1,14 +1,11 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# # Adult dataset preprocessing
-
-# In[1]:
+# Adult dataset preprocessing
 
 import pandas as pd
 import matplotlib.pyplot as plt
 
 from utils.dataset import read_dataset
+
+import os
 
 
 def preprocess():
@@ -152,10 +149,10 @@ def preprocess():
 
     # In[34]:
 
-    X_df.to_csv('datasets/adult_clean_num.csv', index=False)
-    X_df_num.to_csv('datasets/adult_clean.csv', index=False)
-    X_df_cat.to_csv('datasets/adult_clean_cat.csv', index=False)
+    X_df.to_csv(os.path.join('datasets', 'adult_clean_num.csv'), index=False)
+    X_df_num.to_csv(os.path.join('datasets', 'adult_clean.csv'), index=False)
+    X_df_cat.to_csv(os.path.join('datasets', 'adult_clean_cat.csv'), index=False)
 
-    y.to_csv('datasets/adult_clean_y.csv', index=False)
+    y.to_csv(os.path.join('datasets', 'adult_clean_y.csv'), index=False)
 
     return 'adult_clean_num.csv', 'adult_clean_cat.csv', 'adult_clean.csv', 'adult_clean_y.csv'
