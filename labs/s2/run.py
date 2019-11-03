@@ -5,19 +5,16 @@ from datetime import datetime
 from typing import List, Dict
 
 import pandas as pd
+from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score, silhouette_score
 
+from algorithms.agglomerative import agglomerative_clustering
+from algorithms.fcm import FuzzyCMeans
 from algorithms.kmeans import KMeans
 from algorithms.kmodes import KModes
 from algorithms.kprototypes import KPrototypes
 from preprocessing import adult, connect_4, segment
 from utils import evaluate
 from utils.optimize import optimize
-
-from algorithms.agglomerative import agglomerative_clustering
-
-from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score, silhouette_score
-
-from algorithms.kmeans import KMeans
 
 metrics = {
     'calinski_harabasz_score': calinski_harabasz_score,
@@ -158,7 +155,7 @@ def run_fcm(paths: List[Dict[str, str]], args=dict):
 
         alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': args.output_path}
         results = optimize(X=X.values,
-                           algorithm=KMeans,
+                           algorithm=FuzzyCMeans,
                            algorithm_params=alg_params,
                            metric='calinski_harabasz_score',
                            metric_params={'X': X.values},
