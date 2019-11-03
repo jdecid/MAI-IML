@@ -74,7 +74,6 @@ class FuzzyCMeans(KMeans):
                 u_ki **= -1
                 self.u[k, i] = u_ki
 
-        # TODO: Necessary?
         self.u = self.u / self.u.sum(axis=0)[None, :]
 
     def _check_convergence(self, previous_centroids):

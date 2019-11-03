@@ -158,7 +158,7 @@ class KMeans:
 
     def _compute_centroids(self):
         for k in range(self.K):
-            if len(self.nearest[k]) > 0:  # TODO: Review if necessary
+            if len(self.nearest[k]) > 0:
                 self.centroids[k, :] = np.mean(np.array(self.nearest[k]), axis=0)
 
     def _loss(self):

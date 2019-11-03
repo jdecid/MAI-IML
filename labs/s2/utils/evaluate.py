@@ -46,7 +46,6 @@ def partition_entropy(u):
 
 
 def xie_beni(X, u, centroids):
-    # TODO: Fuzzy degree m
     min_val = np.inf
     for t in range(centroids.shape[0]):
         for s in range(centroids.shape[0]):
