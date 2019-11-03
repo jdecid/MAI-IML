@@ -23,8 +23,6 @@ metrics = {
 }
 
 
-# TODO: prints -> logs, or tables, or something, PRETTIFY somehow
-
 def optimize_dict_to_table(results):
     table = '\n| K | Score |\n :---: | :---:'
     for x in results:
@@ -49,15 +47,34 @@ def eval_dict_to_table(res):
     return table
 
 
+def generate_results(X, Y, results, results_to_save):
+    # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
+    res = evaluate.evaluate_unsupervised(X=X, labels=results[0]['prediction'])
+    results_to_save += f'Unsupervised evaluation of the clustering with the best K ({results[0]["k"]}):\n'
+    results_to_save += f'{eval_dict_to_table(res)}\n'
+    # With k = n_classes
+    n_classes = len(Y[Y.columns[0]].unique())
+    real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
+    res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'])
+    results_to_save += f'Unsupervised evaluation of the clustering with K = #classes({real_k["k"]}):\n'
+    results_to_save += f'{eval_dict_to_table(res)}\n'
+    return results_to_save
+
+
 def run_agglomerative(paths: List[Dict[str, str]], params):
     # TODO: SUBSET of connect-4, otherwise memory error! Also, save this subset because the professor wants to inspect t
     message = 'Running Agglomerative experiments'
     print(message + '...')
     logging.info(message)
-    results_to_save = 'Agglomerative experiments results\n'
-    results_to_save += 'Except the number of clusters, affinity and linkage, the other parameters are the default ones.'
-    results_to_save += 'We will set #clusters to #classes'
+    results_to_save = """
+        ### Agglomerative Clustering experiments results
+        Except for the number of clusters, affinity and linkage, the other parameters are the default ones.
+        We set #clusters as #classes.
+    """
+
     for path in paths:
+        results_to_save += f'Optimization of K with calinski_harabasz_score:\n{optimize_dict_to_table(results)}\n'
+
         results_to_save += f'{path["name"]} dataset\n'
         X = pd.read_csv(os.path.join('datasets', path['X']))
         Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
@@ -84,8 +101,11 @@ def run_kmeans(paths: List[Dict[str, str]], params):
     print(message + '...')
     logging.info(message)
 
-    results_to_save = 'K-Means experiments results\n'
-    results_to_save += 'Except K, the other parameters are the default ones (eg. euclidean distance)\n'
+    results_to_save = """
+        ### K-Means experiments results
+        Except K, the other parameters are the default ones (eg. euclidean distance)
+    """
+
     for path in paths:
         results_to_save += f'{path["name"]} dataset\n'
         X = pd.read_csv(os.path.join('datasets', path['X']))
@@ -102,19 +122,7 @@ def run_kmeans(paths: List[Dict[str, str]], params):
                            k_values=list(range(2, 10)),
                            goal='minimize')
 
-        results_to_save += f'Optimization of K with calinski_harabasz_score:\n{optimize_dict_to_table(results)}\n'
-
-        # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
-        res = evaluate.evaluate_unsupervised(X=X, labels=results[0]['prediction'])
-        results_to_save += f'Unsupervised evaluation of the clustering with the best K ({results[0]["k"]}):\n'
-        results_to_save += f'{eval_dict_to_table(res)}\n'
-
-        # With k = n_classes
-        n_classes = len(Y[Y.columns[0]].unique())
-        real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
-        res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'])
-        results_to_save += f'Unsupervised evaluation of the clustering with K = #classes({real_k["k"]}):\n'
-        results_to_save += f'{eval_dict_to_table(res)}\n'
+        results_to_save = generate_results(X, Y, results, results_to_save)
 
     with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(results_to_save)
@@ -204,21 +212,27 @@ def run_fcm(paths: List[Dict[str, str]], params):
     print(message + '...')
     logging.info(message)
 
+    results_to_save = """
+            ### Fuzzy C-Means experiments results
+            Except *K* and *m* the other parameters are the default ones (eg. euclidean distance)
+        """
+
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X']))
         Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
 
         # Optimization of C
 
-        alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': params.output_path}
+        alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': params.output_path, 'm': 2}
         results = optimize(X=X.values,
                            algorithm=FuzzyCMeans,
                            algorithm_params=alg_params,
                            metric='calinski_harabasz_score',
                            metric_params={'X': X.values},
-                           k_values=list(range(2, 10)),
+                           k_values=list(range(4, 8)),
                            goal='minimize')
 
+        generate_results(X, Y, results, results_to_save)
         # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
         res = evaluate.evaluate_unsupervised(X=X, labels=results[0]['prediction'])
         print(res)

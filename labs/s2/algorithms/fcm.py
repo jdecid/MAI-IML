@@ -1,25 +1,22 @@
 import logging
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
 
 from algorithms.kmeans import KMeans
 from utils.plotting import get_colors
 
 
 class FuzzyCMeans(KMeans):
-    def __init__(self, C: int, m: int, epsilon=0.01, **kwargs):
+    def __init__(self, m: int, epsilon=0.01, **kwargs):
         """
 
-        :param C: Number of Clusters
         :param m: Degree of fuzziness (1 - crisp)
         """
         self.m = m
         self.epsilon = epsilon
 
-        kwargs['K'] = C
         super().__init__(**kwargs)
 
     def _init_centroids(self):
@@ -93,7 +90,7 @@ class FuzzyCMeans(KMeans):
 
         f, ax = plt.subplots(self.K, 1, figsize=(self.K, 6))
 
-        colors = get_colors(4)
+        colors = get_colors(self.K)
         ax[0].set_title('Membership Functions')
 
         for idx in range(self.K):
@@ -101,17 +98,18 @@ class FuzzyCMeans(KMeans):
             ax[idx].tick_params(labelsize=6)
             ax[idx].set_ylim((0, 1))
 
-        plt.show()
+        if self.fig_save_path is None:
+            plt.show()
+        else:
+            directory = os.path.join(self.fig_save_path, self.__class__.__name__)
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+            plt.savefig(os.path.join(directory, f'{self.name}_K{self.K}_{self.it}.png'))
+        plt.close()
 
+    def predict(self, X: np.ndarray):
+        # TODO: What if predict with different data
+        return self.u
 
-if __name__ == '__main__':
-    logging.getLogger('matplotlib').setLevel(logging.WARNING)
-    logging.getLogger().setLevel(logging.DEBUG)
-    dataset = pd.read_csv('../tests/datasets/iris.csv')
-    dataset = dataset.iloc[:, 0:4].values
-
-    sc = MinMaxScaler()
-    dataset = sc.fit_transform(dataset)
-
-    fcm = FuzzyCMeans(C=3, m=3, vis_dims=2)
-    fcm.fit_predict(dataset)
+    def crisp_predict(self, X: np.ndarray):
+        super().predict(X)
