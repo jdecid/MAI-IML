@@ -1,4 +1,5 @@
 import os
+import pickle
 import logging
 import matplotlib.pyplot as plt
 from typing import Type, List
@@ -33,8 +34,18 @@ def plot_k_metrics(data, alg_name: str, alg_params: dict, metric: str):
         directory = os.path.join(alg_params['fig_save_path'], alg_name)
         if not os.path.exists(directory):
             os.mkdir(directory)
-        plt.savefig(os.path.join(directory, f'{alg_name}_K_evolution.png'))
+        plt.savefig(os.path.join(directory, f'evolution_K_{alg_params["name"]}.png'))
     plt.close()
+
+
+def store_predictions(predictions, alg_name, dataset_name, k, fig_save_path):
+    if fig_save_path is not None:
+        directory = os.path.join(fig_save_path, alg_name)
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+
+        with open(os.path.join(directory, f'prediction_{dataset_name}_K{k}.pkl'), mode='wb') as f:
+            pickle.dump(predictions, f)
 
 
 def optimize(X: np.ndarray,
@@ -75,6 +86,8 @@ def optimize(X: np.ndarray,
             'score': score,
             'prediction': prediction
         })
+
+        store_predictions(prediction, algorithm.__name__, alg.name, k, algorithm_params['fig_save_path'])
 
     plot_k_metrics(executions, algorithm.__name__, algorithm_params, metric)
 

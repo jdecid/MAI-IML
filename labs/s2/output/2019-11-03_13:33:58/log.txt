@@ -1,0 +1,5 @@
+INFO:root:Running K-Means experiments
+INFO:root:Optimizing KMeans with calinski_harabasz_score for K in [2, 3, 4, 5, 6, 7, 8, 9]
+INFO:root:Optimizing K = 2
+INFO:root:  0/1000 Loss: 1678.3853662696392
+INFO:root:  1/1000 Loss: 1672.7560808797332
