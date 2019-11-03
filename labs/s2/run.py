@@ -25,6 +25,7 @@ metrics = {
     'silhouette_score': silhouette_score
 }
 
+
 # TODO: prints -> logs, or tables, or something, PRETTIFY somehow
 
 def run_agglomerative(paths: List[Dict[str, str]], args=dict):
@@ -97,7 +98,7 @@ def run_kmodes(paths: List[Dict[str, str]], args=dict):
                            algorithm_params=alg_params,
                            metric='silhouette_score',
                            metric_params={'metric': 'precomputed'},
-                           k_values=[2],#list(range(2, 10)),
+                           k_values=[2],  # list(range(2, 10)),
                            goal='minimize',
                            precomputed_distances=precomputed_distances)
 
@@ -175,36 +176,47 @@ def run_fcm(paths: List[Dict[str, str]], args=dict):
         print(res)
 
 
-def main(args):
-    """Runs EVERYTHING (preprocessing, clustering, evaluation,...), saves images, logs, results etc. for the report"""
-    print('Preprocessing...')
-    file_segment_num, file_segment_cat, file_segment_y = segment.preprocess()
-    #file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = adult.preprocess()
-    #file_connect_4, file_connect_4_num, file_connect_4_y = connect_4.preprocess()
+def main(params):
+    datasets = []
+    if params.dataset == 'adult' or params.dataset is None:
+        file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = adult.preprocess()
+        datasets += [
+            {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y, 'type': 'num'},
+            {'name': 'adult', 'X': file_adult_cat, 'Y': file_adult_y, 'type': 'cat'},
+            {'name': 'adult', 'X': file_adult_mix, 'Y': file_adult_y, 'type': 'mix'},
+        ]
 
-    # run_agglomerative(paths=[
-    #     {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
-    #     # {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y},
-    #     # {'name': 'connect_4', 'X': file_connect_4_num, 'Y': file_connect_4_y}
-    # ], args=args)
-    #
-    # run_kmeans(paths=[
-    #     {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
-    #     {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y},
-    #     {'name': 'connect_4', 'X': file_connect_4_num, 'Y': file_connect_4_y}
-    # ], args=args)
+    if params.dataset == 'connect-4' or params.dataset is None:
+        file_connect_4_cat, file_connect_4_num, file_connect_4_y = connect_4.preprocess()
+        datasets += [
+            {'name': 'adult', 'X': file_connect_4_num, 'Y': file_connect_4_y, 'type': 'num'},
+            {'name': 'adult', 'X': file_connect_4_cat, 'Y': file_connect_4_y, 'type': 'cat'},
+        ]
 
-    run_kmodes(paths=[
-        {'name': 'segment', 'X': file_segment_cat, 'Y': file_segment_y},
-        # {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y},
-        # {'name': 'connect_4', 'X': file_connect_4_num, 'Y': file_connect_4_y}
-    ], args=args)
-    exit()
-    run_kprototypes(paths=[
-        {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y},
-        #{'name': 'adult', 'X': file_adult_mix, 'Y': file_adult_y},
-        #{'name': 'connect_4', 'X': file_connect_4, 'Y': file_connect_4_y}
-    ], args=args)
+    if params.dataset == 'segment' or params.dataset is None:
+        file_segment_num, file_segment_cat, file_segment_y = segment.preprocess()
+        datasets += [
+            {'name': 'adult', 'X': file_segment_num, 'Y': file_segment_y, 'type': 'num'},
+            {'name': 'adult', 'X': file_segment_cat, 'Y': file_segment_y, 'type': 'cat'},
+        ]
+
+    num_paths = list(filter(lambda d: d['type'] == 'num', datasets))
+    cat_paths = list(filter(lambda d: d['type'] == 'cat', datasets))
+
+    if params.algorithm == 'agglomerative' or params.algorithm is None:
+        run_agglomerative(paths=num_paths, args=params)
+
+    if params.algorithm == 'kmeans' or params.algorithm is None:
+        run_kmeans(paths=num_paths, args=params)
+
+    if params.algorithm == 'kmodes' or params.algorithm is None:
+        run_kmodes(paths=cat_paths, args=params)
+
+    if params.algorithm == 'kprototypes' or params.algorithm is None:
+        run_kprototypes(paths=datasets, args=params)
+
+    if params.algorithm == 'fcm' or params.algorithm is None:
+        run_fcm(paths=num_paths, args=params)
 
 
 if __name__ == '__main__':
@@ -212,7 +224,15 @@ if __name__ == '__main__':
     parser.add_argument('output_path', type=str, default='output', help='Output path for the logs')
     parser.add_argument('--seed', type=int, help='Seed for random behavior reproducibility')
 
+    parser.add_argument('--algorithm', type=str, help='Select algorithm to run',
+                        choices=['agglomerative', 'kmeans', 'kmodes', 'kprototypes', 'fcm'])
+    parser.add_argument('--dataset', type=str, help='Select dataset to use',
+                        choices=['adult', 'connect-4', 'segment'])
+
     args = parser.parse_args()
+
+    print(args)
+    exit()
 
     # Use timestamp as log file name
     current_time = datetime.now()
