@@ -11,12 +11,15 @@ import os
 def preprocess():
     # In[3]:
 
+    # TODO: remove prints, images?
     dataset = read_dataset('adult')
     data = dataset['data']
 
     # In[33]:
 
     df = pd.DataFrame(data)
+    # subset needed for executing some of the algorithms in our computers!
+    df = df.sample(n=5000, replace=False, random_state=1)
     df = df.applymap(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
 
     y = df['class'].copy()

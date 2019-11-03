@@ -7,8 +7,10 @@ import pandas as pd
 def preprocess():
     DATASET = 'connect-4'
 
-    data = read_dataset(DATASET, dataset_path=os.path.join('..', 'datasets'))
+    data = read_dataset(DATASET)
     df = pd.DataFrame(data['data'])
+    # subset needed for executing some of the algorithms in our computers!
+    df = df.sample(n=5000, replace=False, random_state=1)
 
     # since we are still doing unsupervised methods (clustering), we will ignore labels y... except for sup. evaluation
     df = df.applymap(lambda x: x.decode('utf-8'))  # encode values as unicode strings instead of bytes
@@ -45,8 +47,8 @@ def preprocess():
     X_encoded = X.applymap(recode)
 
     # save the cleaned/encoded X as a CSV for later. y is needed for supervised evaluation.
-    X.to_csv(os.path.join('..', 'datasets', 'connect_4_clean.csv'), index=False)
-    X_encoded.to_csv(os.path.join('..', 'datasets', 'connect_4_clean_num.csv'), index=False)
-    y.to_csv(os.path.join('..', 'datasets', 'connect_4_clean_y.csv'), index=False)
+    X.to_csv(os.path.join('datasets', 'connect_4_clean.csv'), index=False)
+    X_encoded.to_csv(os.path.join('datasets', 'connect_4_clean_num.csv'), index=False)
+    y.to_csv(os.path.join('datasets', 'connect_4_clean_y.csv'), index=False)
     return 'connect_4_clean.csv', 'connect_4_clean_num.csv', 'connect_4_clean_y.csv'
 
