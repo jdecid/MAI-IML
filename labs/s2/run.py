@@ -25,7 +25,7 @@ metrics = {
 
 # TODO: prints -> logs, or tables, or something, PRETTIFY somehow
 
-def run_agglomerative(paths: List[Dict[str, str]], args=dict):
+def run_agglomerative(paths: List[Dict[str, str]], params):
     # TODO: SUBSET of connect-4, otherwise memory error! Also, save this subset because the professor wants to inspect t
     logging.info('Running Agglomerative experiments')
 
@@ -36,7 +36,7 @@ def run_agglomerative(paths: List[Dict[str, str]], args=dict):
         # Instead of optimizing the number of clusters, this time we are going to test other parameter as suggested
         # in the assignment. In particular, we are going to experiment with different affinities and linkages
         n_classes = len(Y[Y.columns[0]].unique())
-        results = agglomerative_clustering(X=X, K=n_classes, fig_save_path=args.output_path)
+        results = agglomerative_clustering(X=X, K=n_classes, fig_save_path=params.output_path)
 
         for result in results:
             print(f'Results with affinity {result["affinity"]} and linkage {result["linkage"]}')
@@ -48,7 +48,7 @@ def run_agglomerative(paths: List[Dict[str, str]], args=dict):
             print(res)
 
 
-def run_kmeans(paths: List[Dict[str, str]], args=dict):
+def run_kmeans(paths: List[Dict[str, str]], params):
     logging.info('Running K-Means experiments')
 
     for path in paths:
@@ -57,7 +57,7 @@ def run_kmeans(paths: List[Dict[str, str]], args=dict):
 
         # Optimization of K
 
-        alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': args.output_path}
+        alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': params.output_path}
         results = optimize(X=X.values,
                            algorithm=KMeans,
                            algorithm_params=alg_params,
@@ -78,7 +78,7 @@ def run_kmeans(paths: List[Dict[str, str]], args=dict):
 
 
 # TODO: isn't run_kmodes extremely slow?
-def run_kmodes(paths: List[Dict[str, str]], args=dict):
+def run_kmodes(paths: List[Dict[str, str]], params):
     logging.info('Running KModes experiments')
 
     for path in paths:
@@ -87,7 +87,7 @@ def run_kmodes(paths: List[Dict[str, str]], args=dict):
 
         # Optimization of K
 
-        alg_params = {'name': path['name'], 'fig_save_path': args.output_path}
+        alg_params = {'name': path['name'], 'fig_save_path': params.output_path}
         alg = KModes(K=1, **alg_params)
         precomputed_distances = alg.compute_point_wise_distances(X.values)
         results = optimize(X=X.values,
@@ -111,7 +111,7 @@ def run_kmodes(paths: List[Dict[str, str]], args=dict):
         print(res)
 
 
-def run_kprototypes(paths: List[Dict[str, str]], args=dict):
+def run_kprototypes(paths: List[Dict[str, str]], params):
     logging.info('Running K-Prototypes experiments')
 
     for path in paths:
@@ -120,7 +120,7 @@ def run_kprototypes(paths: List[Dict[str, str]], args=dict):
 
         # Optimization of K
 
-        alg_params = {'name': path['name'], 'fig_save_path': args.output_path}
+        alg_params = {'name': path['name'], 'fig_save_path': params.output_path}
         alg = KPrototypes(K=1, **alg_params)
         precomputed_distances = alg.compute_point_wise_distances(X.values)
         results = optimize(X=X.values,
@@ -144,7 +144,7 @@ def run_kprototypes(paths: List[Dict[str, str]], args=dict):
         print(res)
 
 
-def run_fcm(paths: List[Dict[str, str]], args=dict):
+def run_fcm(paths: List[Dict[str, str]], params):
     logging.info('Running Fuzzy C-Means experiments')
 
     for path in paths:
@@ -153,7 +153,7 @@ def run_fcm(paths: List[Dict[str, str]], args=dict):
 
         # Optimization of C
 
-        alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': args.output_path}
+        alg_params = {'name': path['name'], 'vis_dims': 2, 'fig_save_path': params.output_path}
         results = optimize(X=X.values,
                            algorithm=FuzzyCMeans,
                            algorithm_params=alg_params,
@@ -201,19 +201,19 @@ def main(params):
     cat_paths = list(filter(lambda d: d['type'] == 'cat', datasets))
 
     if params.algorithm == 'agglomerative' or params.algorithm is None:
-        run_agglomerative(paths=num_paths, args=params)
+        run_agglomerative(paths=num_paths, params=params)
 
     if params.algorithm == 'kmeans' or params.algorithm is None:
-        run_kmeans(paths=num_paths, args=params)
+        run_kmeans(paths=num_paths, params=params)
 
     if params.algorithm == 'kmodes' or params.algorithm is None:
-        run_kmodes(paths=cat_paths, args=params)
+        run_kmodes(paths=cat_paths, params=params)
 
     if params.algorithm == 'kprototypes' or params.algorithm is None:
-        run_kprototypes(paths=datasets, args=params)
+        run_kprototypes(paths=datasets, params=params)
 
     if params.algorithm == 'fcm' or params.algorithm is None:
-        run_fcm(paths=num_paths, args=params)
+        run_fcm(paths=num_paths, params=params)
 
 
 if __name__ == '__main__':
@@ -227,9 +227,6 @@ if __name__ == '__main__':
                         choices=['adult', 'connect-4', 'segment'])
 
     args = parser.parse_args()
-
-    print(args)
-    exit()
 
     # Use timestamp as log file name
     current_time = datetime.now()
