@@ -5,13 +5,14 @@ import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.decomposition import PCA
 
+from utils.optimize import store_predictions
 from utils.plotting import get_colors
 
 AFFINITIES = ['euclidean', 'cosine']
 LINKAGES = ['complete', 'average', 'single']
 
 
-def agglomerative_clustering(X: np.ndarray, K: int, fig_save_path: str = None):
+def agglomerative_clustering(X: np.ndarray, K: int, name: str, fig_save_path: str = None):
     """
     Run agglomerative clustering with six different combinations between:
         - Affinities: `euclidean` or `cosine`.
@@ -30,6 +31,7 @@ def agglomerative_clustering(X: np.ndarray, K: int, fig_save_path: str = None):
                                                  linkage=linkage)
 
             prediction = clustering.fit_predict(X)
+            store_predictions(prediction, 'Agglomerative', f'{name}_{affinity}_{linkage}', K, fig_save_path)
 
             results.append({
                 'affinity': affinity,

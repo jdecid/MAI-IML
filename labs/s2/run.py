@@ -60,7 +60,7 @@ def run_agglomerative(paths: List[Dict[str, str]], params):
         # Instead of optimizing the number of clusters, this time we are going to test other parameter as suggested
         # in the assignment. In particular, we are going to experiment with different affinities and linkages
         n_classes = len(Y[Y.columns[0]].unique())
-        results = agglomerative_clustering(X=X, K=n_classes, fig_save_path=params.output_path)
+        results = agglomerative_clustering(X=X, K=n_classes, name=path['name'], fig_save_path=params.output_path)
 
         for result in results:
             results_to_save += f'Results with affinity {result["affinity"]} and linkage {result["linkage"]}\n'
