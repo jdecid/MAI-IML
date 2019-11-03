@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import pprint as pp
 from datetime import datetime
 from typing import List, Dict
 
@@ -227,6 +228,13 @@ if __name__ == '__main__':
                         choices=['adult', 'connect-4', 'segment'])
 
     args = parser.parse_args()
+
+    print('+' + '-' * 45 + '+')
+    print(f'| > Results will be stored in {args.output_path.upper()}')
+    print(f'| > Seed: {args.seed}')
+    print(f'| > Algorithms: {args.algorithm if args.algorithm is not None else "ALL"}')
+    print(f'| > Datasets: {args.dataset if args.dataset is not None else "ALL"}')
+    print('+' + '-' * 45 + '+')
 
     # Use timestamp as log file name
     current_time = datetime.now()
