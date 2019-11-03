@@ -1,13 +1,10 @@
-import numpy as np
+import os
+
 import pandas as pd
-from matplotlib import pyplot as plt
-from scipy.cluster.hierarchy import dendrogram
-from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import MinMaxScaler
 
 from utils.dataset import read_dataset
 
-import os
 
 # # Segment
 # 
@@ -78,6 +75,6 @@ def preprocess():
     df_X_num.to_csv(os.path.join('datasets', 'segment_clean_num.csv'), index=False)
     df_X_cat.to_csv(os.path.join('datasets', 'segment_clean_cat.csv'), index=False)
 
-    y.to_csv(os.path.join('datasets', 'segment_clean_y.csv'), index=False)
+    y.to_csv(os.path.join('datasets', 'segment_clean_y.csv'), index=False, header=False)
 
     return 'segment_clean_num.csv', 'segment_clean_cat.csv', 'segment_clean_y.csv'

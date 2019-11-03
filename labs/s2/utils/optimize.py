@@ -6,6 +6,7 @@ from typing import Type, List
 
 import numpy as np
 from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score, silhouette_score
+from tqdm import tqdm
 
 from algorithms.kmeans import KMeans
 
@@ -71,7 +72,7 @@ def optimize(X: np.ndarray,
     if precomputed_distances is not None:
         metric_params['X'] = precomputed_distances
 
-    for k in k_values:
+    for k in tqdm(k_values, ncols=100):
         logging.info(f'Optimizing K = {k}')
 
         alg = algorithm(K=k, **algorithm_params)

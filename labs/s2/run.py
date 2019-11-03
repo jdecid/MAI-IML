@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-import pprint as pp
+import termtables as tt
 from datetime import datetime
 from typing import List, Dict
 
@@ -27,17 +27,21 @@ metrics = {
 # TODO: prints -> logs, or tables, or something, PRETTIFY somehow
 
 def optimize_dict_to_table(results):
-    table = 'k score\n'
-    for k, score, _ in results.items():
-        table += f'{k} {score}\n'
-    return table
+    return tt.to_string(
+        list(map(lambda x: [x['k'], f'{x["score"]:.6f}'], results)),
+        header=['K', 'Score'],
+        style=tt.styles.thin_double,
+        padding=(0, 1),
+        alignment='cr'
+    )
 
 
 def eval_dict_to_table(res):
     table = 'metric score'
-    for metric in res:
+    for metric, result in res.items():
         if metric != 'contingency_matrix':
-            table += f'{metric} {res["metric"]}\n'
+            table += f'{metric} {result}\n'
+
     if 'contingency_matrix' in res:
         table += '\n contingency_matrix\n'
         table += str(res['contingency_matrix']) + '\n'
@@ -97,18 +101,18 @@ def run_kmeans(paths: List[Dict[str, str]], params):
                            k_values=list(range(2, 10)),
                            goal='minimize')
 
-        results_to_save += f'Optimization of K with calinski_harabasz_score:\n {optimize_dict_to_table(results)}\n'
+        results_to_save += f'Optimization of K with calinski_harabasz_score:\n{optimize_dict_to_table(results)}\n'
 
         # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
         res = evaluate.evaluate_unsupervised(X=X, labels=results[0]['prediction'])
-        results_to_save += f'Unsupervised evaluation of the clustering with the best K ({res[0]["k"]}):\n'
+        results_to_save += f'Unsupervised evaluation of the clustering with the best K ({results[0]["k"]}):\n'
         results_to_save += f'{eval_dict_to_table(res)}\n'
 
         # With k = n_classes
         n_classes = len(Y[Y.columns[0]].unique())
         real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
         res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'])
-        results_to_save += f'Unsupervised evaluation of the clustering with K = # classes({real_k}):\n'
+        results_to_save += f'Unsupervised evaluation of the clustering with K = # classes({real_k["k"]}):\n'
         results_to_save += f'{eval_dict_to_table(res)}\n'
 
     with open(os.path.join(params.output_path, 'results.txt'), 'a') as f:
@@ -140,7 +144,7 @@ def run_kmodes(paths: List[Dict[str, str]], params):
                            k_values=[2],  # list(range(2, 10)),
                            goal='minimize',
                            precomputed_distances=precomputed_distances)
-        results_to_save += f'Optimization of K with silhouette_score:\n {optimize_dict_to_table(results)}\n'
+        results_to_save += f'Optimization of K with silhouette_score:\n{optimize_dict_to_table(results)}\n'
         # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
         # Only silhouette_score
         results_to_save += f'silhouette_score with best K ({results[0]["k"]}) = {results[0]["score"]}\n'
@@ -180,7 +184,7 @@ def run_kprototypes(paths: List[Dict[str, str]], params):
                            k_values=[2],  # list(range(2, 10)),
                            goal='minimize',
                            precomputed_distances=precomputed_distances)
-        results_to_save += f'Optimization of K with silhouette_score:\n {optimize_dict_to_table(results)}\n'
+        results_to_save += f'Optimization of K with silhouette_score:\n{optimize_dict_to_table(results)}\n'
         # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
         # Only silhouette_score
 

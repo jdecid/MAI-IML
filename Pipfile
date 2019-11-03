@@ -4,16 +4,18 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+sphinx = "*"
+sphinx-bootstrap-theme = "*"
 
 [packages]
 numpy = "*"
-matplotlib = "*"
 scipy = "*"
 scikit-learn = "*"
 pandas = "*"
 ipykernel = "*"
-sphinx = "*"
-sphinx-bootstrap-theme = "*"
+tqdm = "*"
+matplotlib = "==3.0.0"
+termtables = "*"
 
 [requires]
 python_version = "3.6"
