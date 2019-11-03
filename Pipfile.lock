@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b193ac07a1f7592c753a0a4902b8a271cd2688d0b64fd3be0cf731e40572bf5f"
+            "sha256": "b5460c8a91745a62824f8aa9c32f382b29654a18ebc23cf8d17b4c8221b74823"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -21,7 +21,7 @@
                 "sha256:5b26757dc6f79a3b7dc9fab95359328d5747fcb2409d331ea66d0272b90ab2a0",
                 "sha256:8b995ffe925347a2138d7ac0fe77155e4311a0ea6d6da4f5128fe4b3cbe5ed71"
             ],
-            "markers": "sys_platform == 'darwin'",
+            "markers": "platform_system == 'Darwin'",
             "version": "==0.1.0"
         },
         "backcall": {
@@ -353,14 +353,6 @@
                 "sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73"
             ],
             "version": "==1.12.0"
-        },
-        "termtables": {
-            "hashes": [
-                "sha256:0fd321f7f478001f824896b4dbc5af0cf296ecf3c4aa450018cdcd31b4880b6e",
-                "sha256:762ba718cae224917fd8e1eda5cbfb33027ab6c86cfb9dd676e35f0c6516b4bf"
-            ],
-            "index": "pypi",
-            "version": "==0.1.1"
         },
         "tornado": {
             "hashes": [

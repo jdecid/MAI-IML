@@ -1,7 +1,6 @@
 import argparse
 import logging
 import os
-import termtables as tt
 from datetime import datetime
 from typing import List, Dict
 
@@ -27,24 +26,26 @@ metrics = {
 # TODO: prints -> logs, or tables, or something, PRETTIFY somehow
 
 def optimize_dict_to_table(results):
-    return tt.to_string(
-        list(map(lambda x: [x['k'], f'{x["score"]:.6f}'], results)),
-        header=['K', 'Score'],
-        style=tt.styles.thin_double,
-        padding=(0, 1),
-        alignment='cr'
-    )
+    table = '\n| K | Score |\n :---: | :---:'
+    for x in results:
+        table += f'\n {x["k"]} | {x["score"]:.6f}'
+    return table
 
 
 def eval_dict_to_table(res):
-    table = 'metric score'
-    for metric, result in res.items():
+    table = '\n| Metric | Score |\n :---: | :---:'
+    for metric, score in res.items():
         if metric != 'contingency_matrix':
-            table += f'{metric} {result}\n'
+            table += f'\n {metric} | {score:.6f}'
 
     if 'contingency_matrix' in res:
-        table += '\n contingency_matrix\n'
-        table += str(res['contingency_matrix']) + '\n'
+        table += '\nContingency Matrix\n'
+        rows, cols = res['contingency_matrix'].shape[0], res['contingency_matrix'].shape[1]
+        table += '\n|' + ' |' * cols + '\n ' + ':---: |' * cols
+        for i in range(rows):
+            row = ' | '.join(list(map(str, res['contingency_matrix'][i, :])))
+            table += '\n' + row
+
     return table
 
 
@@ -55,7 +56,7 @@ def run_agglomerative(paths: List[Dict[str, str]], params):
     logging.info(message)
     results_to_save = 'Agglomerative experiments results\n'
     results_to_save += 'Except the number of clusters, affinity and linkage, the other parameters are the default ones.'
-    results_to_save += 'We will set # clusters to # classes'
+    results_to_save += 'We will set #clusters to #classes'
     for path in paths:
         results_to_save += f'{path["name"]} dataset\n'
         X = pd.read_csv(os.path.join('datasets', path['X']))
@@ -74,7 +75,7 @@ def run_agglomerative(paths: List[Dict[str, str]], params):
             # Unsupervised
             res = evaluate.evaluate_unsupervised(X=X, labels=result['prediction'])
             results_to_save += f'Unsupervised evaluation: {eval_dict_to_table(res)}\n'
-    with open(os.path.join(params.output_path, 'results.txt'), 'a') as f:
+    with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(results_to_save)
 
 
@@ -112,10 +113,10 @@ def run_kmeans(paths: List[Dict[str, str]], params):
         n_classes = len(Y[Y.columns[0]].unique())
         real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
         res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'])
-        results_to_save += f'Unsupervised evaluation of the clustering with K = # classes({real_k["k"]}):\n'
+        results_to_save += f'Unsupervised evaluation of the clustering with K = #classes({real_k["k"]}):\n'
         results_to_save += f'{eval_dict_to_table(res)}\n'
 
-    with open(os.path.join(params.output_path, 'results.txt'), 'a') as f:
+    with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(results_to_save)
 
 
@@ -156,7 +157,7 @@ def run_kmodes(paths: List[Dict[str, str]], params):
         results_to_save += f'Supervised evaluation of the clustering with K = # classes({real_k}):\n'
         results_to_save += f'{eval_dict_to_table(res)}\n'
 
-    with open(os.path.join(params.output_path, 'results.txt'), 'a') as f:
+    with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(results_to_save)
 
 

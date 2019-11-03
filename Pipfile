@@ -15,7 +15,6 @@ pandas = "*"
 ipykernel = "*"
 tqdm = "*"
 matplotlib = "==3.0.0"
-termtables = "*"
 
 [requires]
 python_version = "3.6"
