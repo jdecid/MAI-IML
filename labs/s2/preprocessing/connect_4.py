@@ -49,6 +49,6 @@ def preprocess():
     # save the cleaned/encoded X as a CSV for later. y is needed for supervised evaluation.
     X.to_csv(os.path.join('datasets', 'connect_4_clean.csv'), index=False)
     X_encoded.to_csv(os.path.join('datasets', 'connect_4_clean_num.csv'), index=False)
-    y.to_csv(os.path.join('datasets', 'connect_4_clean_y.csv'), index=False)
+    y.to_csv(os.path.join('datasets', 'connect_4_clean_y.csv'), index=False, header=False)
     return 'connect_4_clean.csv', 'connect_4_clean_num.csv', 'connect_4_clean_y.csv'
 
