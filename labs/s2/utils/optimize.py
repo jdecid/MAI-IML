@@ -9,11 +9,15 @@ from sklearn.metrics import calinski_harabasz_score, davies_bouldin_score, silho
 from tqdm import tqdm
 
 from algorithms.kmeans import KMeans
+from utils.evaluate import partition_entropy, normalized_partition_coefficient, xie_beni
 
 metrics = {
     'calinski_harabasz_score': calinski_harabasz_score,
     'davies_bouldin_score': davies_bouldin_score,
-    'silhouette_score': silhouette_score
+    'silhouette_score': silhouette_score,
+    'normalized_partition_coefficient': normalized_partition_coefficient,
+    'partition_entropy': partition_entropy,
+    'xie_beni': xie_beni
 }
 
 
@@ -77,16 +81,32 @@ def optimize(X: np.ndarray,
 
         alg = algorithm(K=k, **algorithm_params)
 
-        prediction = alg.fit_predict(X)
+        if metric in ['normalized_partition_coefficient', 'partition_entropy', 'xie_beni']:
+            prediction, v = alg.fit_predict(X)
+            crisp_prediction = alg.crisp_predict(X)
 
-        metric_params['labels'] = prediction
-        score = metrics[metric](**metric_params)
+            if metric == 'xie_beni':
+                score = metrics[metric](X=X, u=prediction, centroids=v)
+            else:
+                score = metrics[metric](u=prediction)
 
-        executions.append({
-            'k': k,
-            'score': score,
-            'prediction': prediction
-        })
+            executions.append({
+                'k': k,
+                'score': score,
+                'prediction': crisp_prediction,
+                'fuzzy_prediction': prediction,
+                'centroids': v
+            })
+        else:
+            prediction = alg.fit_predict(X)
+            metric_params['labels'] = prediction
+            score = metrics[metric](**metric_params)
+
+            executions.append({
+                'k': k,
+                'score': score,
+                'prediction': prediction
+            })
 
         store_predictions(prediction, algorithm.__name__, alg.name, k, algorithm_params['fig_save_path'])
 

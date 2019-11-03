@@ -109,7 +109,7 @@ class FuzzyCMeans(KMeans):
 
     def predict(self, X: np.ndarray):
         # TODO: What if predict with different data
-        return self.u
+        return self.u, self.centroids
 
     def crisp_predict(self, X: np.ndarray):
-        super().predict(X)
+        return super().predict(X)

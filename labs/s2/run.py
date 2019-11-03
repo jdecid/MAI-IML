@@ -52,6 +52,7 @@ def generate_results(X, Y, results, results_to_save):
     res = evaluate.evaluate_unsupervised(X=X, labels=results[0]['prediction'])
     results_to_save += f'Unsupervised evaluation of the clustering with the best K ({results[0]["k"]}):\n'
     results_to_save += f'{eval_dict_to_table(res)}\n'
+
     # With k = n_classes
     n_classes = len(Y[Y.columns[0]].unique())
     real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
@@ -92,6 +93,7 @@ def run_agglomerative(paths: List[Dict[str, str]], params):
             # Unsupervised
             res = evaluate.evaluate_unsupervised(X=X, labels=result['prediction'])
             results_to_save += f'Unsupervised evaluation: {eval_dict_to_table(res)}\n'
+
     with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(results_to_save)
 
@@ -212,10 +214,8 @@ def run_fcm(paths: List[Dict[str, str]], params):
     print(message + '...')
     logging.info(message)
 
-    results_to_save = """
-            ### Fuzzy C-Means experiments results
-            Except *K* and *m* the other parameters are the default ones (eg. euclidean distance)
-        """
+    results_to_save = '### Fuzzy C-Means experiments results'
+    results_to_save += 'Except *K* and *m* the other parameters are the default ones (eg. euclidean distance)'
 
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X']))
@@ -227,21 +227,27 @@ def run_fcm(paths: List[Dict[str, str]], params):
         results = optimize(X=X.values,
                            algorithm=FuzzyCMeans,
                            algorithm_params=alg_params,
-                           metric='calinski_harabasz_score',
+                           metric='xie_beni',
                            metric_params={'X': X.values},
-                           k_values=list(range(4, 8)),
+                           k_values=list(range(2, 10)),
                            goal='minimize')
 
-        generate_results(X, Y, results, results_to_save)
+        results_to_save += generate_results(X, Y, results, results_to_save)
+
         # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
-        res = evaluate.evaluate_unsupervised(X=X, labels=results[0]['prediction'])
-        print(res)
+        res = evaluate.evaluate_soft(X=X.values, u=results[0]['fuzzy_prediction'], v=results[0]['centroids'])
+        results_to_save += f'Unsupervised evaluation of the clustering with the best K ({results[0]["k"]}):\n'
+        results_to_save += f'{eval_dict_to_table(res)}\n'
 
         # With k = n_classes
         n_classes = len(Y[Y.columns[0]].unique())
         real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
-        res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'])
-        print(res)
+        res = evaluate.evaluate_soft(X=X.values, u=real_k['fuzzy_prediction'], v=real_k['centroids'])
+        results_to_save += f'Unsupervised evaluation of the clustering with K = #classes({results[0]["k"]}):\n'
+        results_to_save += f'{eval_dict_to_table(res)}\n'
+
+    with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
+        f.write(results_to_save)
 
 
 def main(params):
