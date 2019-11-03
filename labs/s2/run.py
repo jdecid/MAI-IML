@@ -26,11 +26,34 @@ metrics = {
 
 # TODO: prints -> logs, or tables, or something, PRETTIFY somehow
 
+def optimize_dict_to_table(results):
+    table = 'k score\n'
+    for k, score, _ in results.items():
+        table += f'{k} {score}\n'
+    return table
+
+
+def eval_dict_to_table(res):
+    table = 'metric score'
+    for metric in res:
+        if metric != 'contingency_matrix':
+            table += f'{metric} {res["metric"]}\n'
+    if 'contingency_matrix' in res:
+        table += '\n contingency_matrix\n'
+        table += str(res['contingency_matrix']) + '\n'
+    return table
+
+
 def run_agglomerative(paths: List[Dict[str, str]], params):
     # TODO: SUBSET of connect-4, otherwise memory error! Also, save this subset because the professor wants to inspect t
-    logging.info('Running Agglomerative experiments')
-
+    message = 'Running Agglomerative experiments'
+    print(message + '...')
+    logging.info(message)
+    results_to_save = 'Agglomerative experiments results\n'
+    results_to_save += 'Except the number of clusters, affinity and linkage, the other parameters are the default ones.'
+    results_to_save += 'We will set # clusters to # classes'
     for path in paths:
+        results_to_save += f'{path["name"]} dataset\n'
         X = pd.read_csv(os.path.join('datasets', path['X']))
         Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
 
@@ -40,19 +63,26 @@ def run_agglomerative(paths: List[Dict[str, str]], params):
         results = agglomerative_clustering(X=X, K=n_classes, fig_save_path=params.output_path)
 
         for result in results:
-            print(f'Results with affinity {result["affinity"]} and linkage {result["linkage"]}')
+            results_to_save += f'Results with affinity {result["affinity"]} and linkage {result["linkage"]}\n'
             # Supervised evaluation (we are using k = # classes)
             res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=result['prediction'])
-            print(res)
+            results_to_save += f'Supervised evaluation: {eval_dict_to_table(res)}\n'
             # Unsupervised
             res = evaluate.evaluate_unsupervised(X=X, labels=result['prediction'])
-            print(res)
+            results_to_save += f'Unsupervised evaluation: {eval_dict_to_table(res)}\n'
+    with open(os.path.join(params.output_path, 'results.txt'), 'a') as f:
+        f.write(results_to_save)
 
 
 def run_kmeans(paths: List[Dict[str, str]], params):
-    logging.info('Running K-Means experiments')
+    message = 'Running K-Means experiments'
+    print(message + '...')
+    logging.info(message)
 
+    results_to_save = 'K-Means experiments results\n'
+    results_to_save += 'Except K, the other parameters are the default ones (eg. euclidean distance)\n'
     for path in paths:
+        results_to_save += f'{path["name"]} dataset\n'
         X = pd.read_csv(os.path.join('datasets', path['X']))
         Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
 
@@ -67,22 +97,33 @@ def run_kmeans(paths: List[Dict[str, str]], params):
                            k_values=list(range(2, 10)),
                            goal='minimize')
 
+        results_to_save += f'Optimization of K with calinski_harabasz_score:\n {optimize_dict_to_table(results)}\n'
+
         # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
         res = evaluate.evaluate_unsupervised(X=X, labels=results[0]['prediction'])
-        print(res)
+        results_to_save += f'Unsupervised evaluation of the clustering with the best K ({res[0]["k"]}):\n'
+        results_to_save += f'{eval_dict_to_table(res)}\n'
 
         # With k = n_classes
         n_classes = len(Y[Y.columns[0]].unique())
         real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
         res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'])
-        print(res)
+        results_to_save += f'Unsupervised evaluation of the clustering with K = # classes({real_k}):\n'
+        results_to_save += f'{eval_dict_to_table(res)}\n'
+
+    with open(os.path.join(params.output_path, 'results.txt'), 'a') as f:
+        f.write(results_to_save)
 
 
 # TODO: isn't run_kmodes extremely slow?
 def run_kmodes(paths: List[Dict[str, str]], params):
-    logging.info('Running KModes experiments')
+    message = 'Running KModes experiments'
+    print(message + '...')
+    logging.info(message)
 
+    results_to_save = 'K-Modes experiments results\n'
     for path in paths:
+        results_to_save += f'{path["name"]} dataset\n'
         X = pd.read_csv(os.path.join('datasets', path['X']))
         Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
 
@@ -99,23 +140,30 @@ def run_kmodes(paths: List[Dict[str, str]], params):
                            k_values=[2],  # list(range(2, 10)),
                            goal='minimize',
                            precomputed_distances=precomputed_distances)
-
+        results_to_save += f'Optimization of K with silhouette_score:\n {optimize_dict_to_table(results)}\n'
         # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
         # Only silhouette_score
-
-        print(results[0]['score'])
+        results_to_save += f'silhouette_score with best K ({results[0]["k"]}) = {results[0]["score"]}\n'
 
         # With k = n_classes
         n_classes = len(Y[Y.columns[0]].unique())
         real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
         res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'][0])
-        print(res)
+        results_to_save += f'Supervised evaluation of the clustering with K = # classes({real_k}):\n'
+        results_to_save += f'{eval_dict_to_table(res)}\n'
+
+    with open(os.path.join(params.output_path, 'results.txt'), 'a') as f:
+        f.write(results_to_save)
 
 
 def run_kprototypes(paths: List[Dict[str, str]], params):
-    logging.info('Running K-Prototypes experiments')
+    message = 'Running K-Prototypes experiments'
+    print(message + '...')
+    logging.info(message)
 
+    results_to_save = 'K-Prototypes experiments results\n'
     for path in paths:
+        results_to_save += f'{path["name"]} dataset\n'
         X = pd.read_csv(os.path.join('datasets', path['X']))
         Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
 
@@ -132,21 +180,24 @@ def run_kprototypes(paths: List[Dict[str, str]], params):
                            k_values=[2],  # list(range(2, 10)),
                            goal='minimize',
                            precomputed_distances=precomputed_distances)
-
+        results_to_save += f'Optimization of K with silhouette_score:\n {optimize_dict_to_table(results)}\n'
         # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
         # Only silhouette_score
 
-        print(results[0]['score'])
+        results_to_save += f'silhouette_score with best K ({results[0]["k"]}) = {results[0]["score"]}\n'
 
         # With k = n_classes
         n_classes = len(Y[Y.columns[0]].unique())
         real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
         res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'][0])
-        print(res)
+        results_to_save += f'Supervised evaluation of the clustering with K = # classes({real_k}):\n'
+        results_to_save += f'{eval_dict_to_table(res)}\n'
 
 
 def run_fcm(paths: List[Dict[str, str]], params):
-    logging.info('Running Fuzzy C-Means experiments')
+    message = 'Running Fuzzy C-Means experiments'
+    print(message + '...')
+    logging.info(message)
 
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X']))
@@ -187,15 +238,15 @@ def main(params):
     if params.dataset == 'connect-4' or params.dataset is None:
         file_connect_4_cat, file_connect_4_num, file_connect_4_y = connect_4.preprocess()
         datasets += [
-            {'name': 'adult', 'X': file_connect_4_num, 'Y': file_connect_4_y, 'type': 'num'},
-            {'name': 'adult', 'X': file_connect_4_cat, 'Y': file_connect_4_y, 'type': 'cat'},
+            {'name': 'connect-4', 'X': file_connect_4_num, 'Y': file_connect_4_y, 'type': 'num'},
+            {'name': 'connect-4', 'X': file_connect_4_cat, 'Y': file_connect_4_y, 'type': 'cat'},
         ]
 
     if params.dataset == 'segment' or params.dataset is None:
         file_segment_num, file_segment_cat, file_segment_y = segment.preprocess()
         datasets += [
-            {'name': 'adult', 'X': file_segment_num, 'Y': file_segment_y, 'type': 'num'},
-            {'name': 'adult', 'X': file_segment_cat, 'Y': file_segment_y, 'type': 'cat'},
+            {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y, 'type': 'num'},
+            {'name': 'segment', 'X': file_segment_cat, 'Y': file_segment_y, 'type': 'cat'},
         ]
 
     num_paths = list(filter(lambda d: d['type'] == 'num', datasets))
