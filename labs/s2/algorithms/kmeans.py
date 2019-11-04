@@ -7,6 +7,7 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import distance
 from sklearn.decomposition import PCA
+from tqdm import tqdm
 
 from utils.plotting import get_colors
 
@@ -105,10 +106,14 @@ class KMeans:
 
     def compute_point_wise_distances(self, X):
         n = X.shape[0]
+        pb = tqdm(total=n * n, ncols=100)
         distances = np.zeros(shape=(n, n))
         for i in range(n):
-            for j in range(n):
-                distances[i, j] = self._distance(a=X[i, :], b=X[j, :])
+            for j in range(i + 1, n):
+                d = self._distance(a=X[i, :], b=X[j, :])
+                distances[i, j] = distances[j, i] = d
+            pb.update(n=n)
+        pb.close()
         return distances
 
     def _init_centroids(self):
