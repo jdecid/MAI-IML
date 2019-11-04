@@ -202,7 +202,7 @@ def run_kprototypes(paths: List[Dict[str, str]], params):
                            algorithm_params=alg_params,
                            metric='silhouette_score',
                            metric_params={'metric': 'precomputed'},
-                           k_values=[2],  # list(range(2, 10)),
+                           k_values=list(range(2, 15)),
                            goal='minimize',
                            precomputed_distances=precomputed_distances)
 
