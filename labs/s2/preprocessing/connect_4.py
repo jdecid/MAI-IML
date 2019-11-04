@@ -31,17 +31,17 @@ def preprocess():
     # 'o' means that we have a cell with a disk belonging to player 'o', and 'b' means that
     # the cell is empty (blank).
 
-    # Instead of one hot encoding, we will apply label encoder with [-1, 0, 1]. The reason why we will do it
+    # Instead of one hot encoding, we will apply label encoder with [0, 0.5, 1]. The reason why we will do it
     # this way is that 'x' and 'o' are antagonists, and 'b' is the neutral value. So, there is some kind of natural
     # order. This way, we can avoid the one hot encoding, which would increase the number of columns.
     # Since all the variables have the same domain, we should be consistent with the encoding. For us, 'x'
-    # will always be encoded as '-1' and 'o' will always be encoded as '1'.
+    # will always be encoded as '0' and 'o' will always be encoded as '1'.
     # X_encoded = X.apply(LabelEncoder().fit_transform)
     # LabelEncoder works alphabetically and with range [0,n_classes-1],
     # so 'b' will be encoded as 2, 'o' as 1, and 'x' as 0, which is not the intended outcome for us.
     # It has no additional parameters, so we will apply our own encoder:
     def recode(x):
-        recode_map = {'x': -1, 'b': 0, 'o': 1}
+        recode_map = {'x': 0, 'b': 0.5, 'o': 1}
         return recode_map[x]
 
     X_encoded = X.applymap(recode)
