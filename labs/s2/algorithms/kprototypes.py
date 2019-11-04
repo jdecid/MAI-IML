@@ -42,6 +42,10 @@ class KPrototypes(KMeans):
         :param b: 1D vector with all B attributes.
         :return: Numerical attributes distance + gamma_factor * Categorical attributes distance.
         """
-        num_sum = np.linalg.norm(a[~self.mask] - b[~self.mask])
-        cat_sum = sum(a[self.mask] != b[self.mask])
+        num_sum = 0
+        if any(not e for e in self.mask):
+            num_sum = np.linalg.norm(a[~self.mask] - b[~self.mask])
+        cat_sum = 0
+        if any(e for e in self.mask):
+            cat_sum = sum(a[self.mask] != b[self.mask])
         return num_sum + self.gamma * cat_sum
