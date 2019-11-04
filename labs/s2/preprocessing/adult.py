@@ -7,7 +7,7 @@ from utils.dataset import read_dataset
 
 
 def preprocess():
-    dataset = read_dataset('adult', dataset_path='../datasets')
+    dataset = read_dataset('adult')
     data = dataset['data']
 
     df = pd.DataFrame(data)
