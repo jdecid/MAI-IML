@@ -17,4 +17,4 @@ class KModes(KMeans):
         :param b: 1D vector with all B attributes.
         :return: Distance (dissimilarity) between a and b.
         """
-        return sum(a != b)
+        return float(np.sum(a != b))

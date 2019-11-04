@@ -149,13 +149,14 @@ def run_kmodes(paths: List[Dict[str, str]], params):
 
         alg_params = {'name': path['name'], 'fig_save_path': params.output_path}
         alg = KModes(K=1, **alg_params)
+        print('Pre-computing point-wise distances matrix...')
         precomputed_distances = alg.compute_point_wise_distances(X.values)
         results = optimize(X=X.values,
                            algorithm=KModes,
                            algorithm_params=alg_params,
                            metric='silhouette_score',
                            metric_params={'metric': 'precomputed'},
-                           k_values=[2],  # list(range(2, 10)),
+                           k_values=list(range(2, 15)),
                            goal='minimize',
                            precomputed_distances=precomputed_distances)
         results_to_save += f'Optimization of K with silhouette_score:\n{optimize_dict_to_table(results)}\n'
@@ -195,7 +196,7 @@ def run_kprototypes(paths: List[Dict[str, str]], params):
 
         # Optimization of K
 
-        alg_params = {'name': path['name'], 'fig_save_path': params.output_path}
+        alg_params = {'name': path['name'], 'fig_save_path': params.output_path, 'cat_idx':  get_cat_idx(X)}
         alg = KPrototypes(K=1, cat_idx=get_cat_idx(X), **alg_params)
         precomputed_distances = alg.compute_point_wise_distances(X.values)
         results = optimize(X=X.values,
