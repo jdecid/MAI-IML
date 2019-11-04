@@ -163,7 +163,7 @@ def run_kmodes(paths: List[Dict[str, str]], params):
                            metric='silhouette_score',
                            metric_params={'metric': 'precomputed'},
                            k_values=list(range(2, 15)),
-                           goal='minimize',
+                           goal='maximize',
                            precomputed_distances=precomputed_distances)
 
         results_to_save = generate_results(X, Y, results, results_to_save, precomputed_distances=precomputed_distances)
