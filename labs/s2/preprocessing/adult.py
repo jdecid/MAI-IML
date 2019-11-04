@@ -66,6 +66,6 @@ def preprocess():
     X_df_num.to_csv(os.path.join('datasets', 'adult_clean_num.csv'), index=False)
     X_df_cat.to_csv(os.path.join('datasets', 'adult_clean_cat.csv'), index=False)
 
-    y.to_csv(os.path.join('datasets', 'adult_clean_y.csv'), index=False)
+    y.to_csv(os.path.join('datasets', 'adult_clean_y.csv'), index=False, header=False)
 
     return 'adult_clean_num.csv', 'adult_clean_cat.csv', 'adult_clean.csv', 'adult_clean_y.csv'
