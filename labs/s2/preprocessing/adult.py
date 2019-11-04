@@ -58,7 +58,7 @@ def preprocess():
     X_df_num = pd.concat((X_categorical, X_numerical), axis=1)
 
     # Categorical only data
-    X_df_cat = pd.concat((X_categorical, X_numerical_as_categorical), axis=1)
+    X_df_cat = pd.concat((df[categorical_features], X_numerical_as_categorical), axis=1)
 
     # In[34]:
 
