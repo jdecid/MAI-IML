@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.decomposition import PCA
+from tqdm import tqdm
 
 from utils.optimize import store_predictions
 from utils.plotting import get_colors
@@ -22,8 +23,9 @@ def agglomerative_clustering(X: np.ndarray, K: int, name: str, fig_save_path: st
     :param fig_save_path: Whether to save or plot figure
     :return: List of clustering predictions with the corresponding affinity and linkage methods.
     """
-    results = []
+    pb = tqdm(total=len(AFFINITIES) * len(LINKAGES), ncols=100)
 
+    results = []
     for affinity in AFFINITIES:
         for linkage in LINKAGES:
             clustering = AgglomerativeClustering(n_clusters=K,
@@ -45,7 +47,7 @@ def agglomerative_clustering(X: np.ndarray, K: int, name: str, fig_save_path: st
             colors = get_colors(K)
 
             plt.figure()
-            plt.title(f'Agglomerative Clustering with {affinity} affinity and {linkage} linkage')
+            plt.title(f'Agglomerative Clustering K={K}, affinity={affinity} and linkage={linkage}')
 
             for k in range(K):
                 plt.scatter(x=points[np.where(prediction == k)][:, 0],
@@ -58,7 +60,9 @@ def agglomerative_clustering(X: np.ndarray, K: int, name: str, fig_save_path: st
                 log_directory = os.path.join(fig_save_path, 'Agglomerative')
                 if not os.path.exists(log_directory):
                     os.mkdir(log_directory)
-                plt.savefig(os.path.join(log_directory, f'Agglomerative_{K}.png'))
+                plt.savefig(os.path.join(log_directory, f'agglomerative_{name}_{affinity}_{linkage}_{K}.png'))
             plt.close()
+
+            pb.update()
 
     return results

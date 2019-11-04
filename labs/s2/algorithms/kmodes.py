@@ -1,14 +1,14 @@
-from scipy import stats
+import numpy as np
+from scipy.stats import mode
 
 from algorithms.kmeans import KMeans
-from utils.evaluate import *
 
 
 class KModes(KMeans):
     def _compute_centroids(self):
         for k in range(self.K):
-            if self.nearest[k]:
-                self.centroids[k, :] = stats.mode(self.nearest[k]).mode[0]
+            if len(self.nearest[k]) > 0:
+                self.centroids[k, :] = mode(self.nearest[k])[0][0]
 
     def _distance(self, a: np.ndarray, b: np.ndarray) -> float:
         """
