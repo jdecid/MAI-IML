@@ -11,7 +11,8 @@ def preprocess():
     data = dataset['data']
 
     df = pd.DataFrame(data)
-    df = df.sample(n=5000, replace=False, random_state=1).reset_index()
+    df = df.sample(n=5000, replace=False, random_state=1).reset_index(drop=True)
+
     df = df.applymap(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
 
     # Real Y labels

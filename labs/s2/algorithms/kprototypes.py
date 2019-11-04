@@ -1,4 +1,4 @@
-from scipy import stats
+from scipy.stats import mode
 
 from algorithms.kmeans import KMeans
 from utils.evaluate import *
@@ -25,13 +25,15 @@ class KPrototypes(KMeans):
 
     def _compute_centroids(self):
         # Categorical
-        for k in range(self.K):
-            if self.nearest[k]:
-                self.centroids[k, self.mask] = stats.mode(np.array(self.nearest[k])[:, self.mask]).mode[0]
+        if any(self.mask):
+            for k in range(self.K):
+                if self.nearest[k]:
+                    self.centroids[k, self.mask] = mode(np.array(self.nearest[k])[:, self.mask])[0][0]
 
         # Numerical
-        self.centroids[:, ~self.mask] = np.array(
-            list(map(lambda x: np.mean(np.array(x)[:, ~self.mask], axis=0), self.nearest)))
+        if not all(self.mask):
+            self.centroids[:, ~self.mask] = np.array(
+                list(map(lambda x: np.mean(np.array(x)[:, ~self.mask], axis=0), self.nearest)))
 
     def _distance(self, a: np.ndarray, b: np.ndarray) -> float:
         """
