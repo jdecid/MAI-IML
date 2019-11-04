@@ -7,11 +7,11 @@ from utils.dataset import read_dataset
 
 
 def preprocess():
-    dataset = read_dataset('adult')
+    dataset = read_dataset('adult', dataset_path='../datasets')
     data = dataset['data']
 
     df = pd.DataFrame(data)
-    df = df.sample(n=5000, replace=False, random_state=1)
+    df = df.sample(n=5000, replace=False, random_state=1).reset_index()
     df = df.applymap(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
 
     # Real Y labels
@@ -69,3 +69,6 @@ def preprocess():
     y.to_csv(os.path.join('datasets', 'adult_clean_y.csv'), index=False, header=False)
 
     return 'adult_clean_num.csv', 'adult_clean_cat.csv', 'adult_clean.csv', 'adult_clean_y.csv'
+
+
+preprocess()

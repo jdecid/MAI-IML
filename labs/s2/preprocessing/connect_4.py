@@ -10,7 +10,7 @@ def preprocess():
     data = read_dataset(DATASET)
     df = pd.DataFrame(data['data'])
     # subset needed for executing some of the algorithms in our computers!
-    df = df.sample(n=5000, replace=False, random_state=1)
+    df = df.sample(n=5000, replace=False, random_state=1).reset_index()
 
     # since we are still doing unsupervised methods (clustering), we will ignore labels y... except for sup. evaluation
     df = df.applymap(lambda x: x.decode('utf-8'))  # encode values as unicode strings instead of bytes
