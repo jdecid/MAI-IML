@@ -304,7 +304,7 @@ if __name__ == '__main__':
 
     # Use timestamp as log file name
     current_time = datetime.now()
-    log_name = str(current_time.date()) + '_' + str(current_time.timetz())[:-7]
+    log_name = str(current_time.date()) + '_' + (str(current_time.timetz())[:-7]).replace(':', '-')
     log_folder = os.path.join(args.output_path, log_name)
 
     os.mkdir(log_folder, mode=0o777)
