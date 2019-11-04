@@ -18,6 +18,11 @@ class KPrototypes(KMeans):
 
         super().fit(X)
 
+    def compute_point_wise_distances(self, X):
+        self.mask = np.zeros(X.shape[1], dtype=bool)
+        self.mask[self.cat_idx] = True
+        return super().compute_point_wise_distances(X)
+
     def _compute_centroids(self):
         # Categorical
         for k in range(self.K):
