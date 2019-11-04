@@ -198,6 +198,7 @@ def run_kprototypes(paths: List[Dict[str, str]], params):
 
         alg_params = {'name': path['name'], 'fig_save_path': params.output_path, 'cat_idx':  get_cat_idx(X)}
         alg = KPrototypes(K=1, cat_idx=get_cat_idx(X), **alg_params)
+        print('Pre-computing point-wise distances matrix...')
         precomputed_distances = alg.compute_point_wise_distances(X.values)
         results = optimize(X=X.values,
                            algorithm=KPrototypes,
