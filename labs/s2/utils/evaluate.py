@@ -21,10 +21,13 @@ def evaluate_supervised(labels_true, labels_pred):
     return res
 
 
-def evaluate_unsupervised(X, labels):
-    res = dict(calinski_harabasz_score=calinski_harabasz_score(X, labels),
-               davies_bouldin_score=davies_bouldin_score(X, labels),
-               silhouette_score=silhouette_score(X, labels))
+def evaluate_unsupervised(X, labels, precomputed_distances=None):
+    if precomputed_distances is None:
+        res = dict(calinski_harabasz_score=calinski_harabasz_score(X, labels),
+                   davies_bouldin_score=davies_bouldin_score(X, labels),
+                   silhouette_score=silhouette_score(X, labels))
+    else:
+        res = dict(silhouette_score=silhouette_score(precomputed_distances, labels, metric='precomputed'))
     return res
 
 

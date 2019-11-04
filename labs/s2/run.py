@@ -47,12 +47,16 @@ def eval_dict_to_table(res):
     return table
 
 
-def generate_results(X, Y, results, results_to_save, fuzzy_eval=False):
+def generate_results(X, Y, results, results_to_save, fuzzy_eval=False, precomputed_distances=None):
+    results_to_save += f'Optimization of K with silhouette_score:\n{optimize_dict_to_table(results)}\n'
+
     # Unsupervised validation with the obtained best K
     if fuzzy_eval:
         res = evaluate.evaluate_soft(X=X.values, u=results[0]['fuzzy_prediction'], v=results[0]['centroids'])
     else:
-        res = evaluate.evaluate_unsupervised(X=X, labels=results[0]['prediction'])
+        res = evaluate.evaluate_unsupervised(X=X,
+                                             labels=results[0]['prediction'],
+                                             precomputed_distances=precomputed_distances)
 
     results_to_save += f'Unsupervised evaluation of the clustering with the best K ({results[0]["k"]}):\n'
     results_to_save += f'{eval_dict_to_table(res)}\n'
@@ -139,7 +143,9 @@ def run_kmodes(paths: List[Dict[str, str]], params):
     print(message + '...')
     logging.info(message)
 
-    results_to_save = 'K-Modes experiments results\n'
+    results_to_save = '### K-Modes experiments results\n'
+    results_to_save += 'Except K, the other parameters are the default ones\n'
+
     for path in paths:
         results_to_save += f'{path["name"]} dataset\n'
         X = pd.read_csv(os.path.join('datasets', path['X']))
@@ -159,17 +165,8 @@ def run_kmodes(paths: List[Dict[str, str]], params):
                            k_values=list(range(2, 15)),
                            goal='minimize',
                            precomputed_distances=precomputed_distances)
-        results_to_save += f'Optimization of K with silhouette_score:\n{optimize_dict_to_table(results)}\n'
-        # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
-        # Only silhouette_score
-        results_to_save += f'silhouette_score with best K ({results[0]["k"]}) = {results[0]["score"]}\n'
 
-        # With k = n_classes
-        n_classes = len(Y[Y.columns[0]].unique())
-        real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
-        res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'][0])
-        results_to_save += f'Supervised evaluation of the clustering with K = # classes({real_k}):\n'
-        results_to_save += f'{eval_dict_to_table(res)}\n'
+        results_to_save = generate_results(X, Y, results, results_to_save, precomputed_distances=precomputed_distances)
 
     with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(results_to_save)
@@ -196,7 +193,7 @@ def run_kprototypes(paths: List[Dict[str, str]], params):
 
         # Optimization of K
 
-        alg_params = {'name': path['name'], 'fig_save_path': params.output_path, 'cat_idx':  get_cat_idx(X)}
+        alg_params = {'name': path['name'], 'fig_save_path': params.output_path, 'cat_idx': get_cat_idx(X)}
         alg = KPrototypes(K=1, **alg_params)
         print('Pre-computing point-wise distances matrix...')
         precomputed_distances = alg.compute_point_wise_distances(X.values)
@@ -208,18 +205,11 @@ def run_kprototypes(paths: List[Dict[str, str]], params):
                            k_values=[2],  # list(range(2, 10)),
                            goal='minimize',
                            precomputed_distances=precomputed_distances)
-        results_to_save += f'Optimization of K with silhouette_score:\n{optimize_dict_to_table(results)}\n'
-        # With best k: unsupervised (supervised generally not possible unless best_k = n_classes
-        # Only silhouette_score
 
-        results_to_save += f'silhouette_score with best K ({results[0]["k"]}) = {results[0]["score"]}\n'
+        results_to_save = generate_results(X, Y, results, results_to_save, precomputed_distances=precomputed_distances)
 
-        # With k = n_classes
-        n_classes = len(Y[Y.columns[0]].unique())
-        real_k = list(filter(lambda r: r['k'] == n_classes, results))[0]
-        res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'][0])
-        results_to_save += f'Supervised evaluation of the clustering with K = # classes({real_k}):\n'
-        results_to_save += f'{eval_dict_to_table(res)}\n'
+    with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
+        f.write(results_to_save)
 
 
 def run_fcm(paths: List[Dict[str, str]], params):
@@ -243,8 +233,8 @@ def run_fcm(paths: List[Dict[str, str]], params):
                            k_values=list(range(2, 10)),
                            goal='minimize')
 
-        results_to_save += generate_results(X, Y, results, results_to_save)
-        results_to_save += generate_results(X, Y, results, results_to_save, fuzzy_eval=True)
+        results_to_save = generate_results(X, Y, results, results_to_save)
+        results_to_save = generate_results(X, Y, results, results_to_save, fuzzy_eval=True)
 
     with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(results_to_save)
