@@ -66,7 +66,7 @@ def generate_results(X, Y, results, results_to_save, fuzzy_eval=False):
     else:
         res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=real_k['prediction'])
 
-    results_to_save += f'Unsupervised evaluation of the clustering with K = #classes({real_k["k"]}):\n'
+    results_to_save += f'Supervised evaluation of the clustering with K = #classes({real_k["k"]}):\n'
     results_to_save += f'{eval_dict_to_table(res)}\n'
 
     return results_to_save
@@ -81,8 +81,6 @@ def run_agglomerative(paths: List[Dict[str, str]], params):
     results_to_save += 'We set #clusters as #classes.'
 
     for path in paths:
-        results_to_save += f'Optimization of K with calinski_harabasz_score:\n{optimize_dict_to_table(results)}\n'
-
         results_to_save += f'{path["name"]} dataset\n'
         X = pd.read_csv(os.path.join('datasets', path['X']))
         Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
@@ -110,8 +108,8 @@ def run_kmeans(paths: List[Dict[str, str]], params):
     print(message + '...')
     logging.info(message)
 
-    results_to_save = '### K-Means experiments results'
-    results_to_save += 'Except K, the other parameters are the default ones (eg. euclidean distance)'
+    results_to_save = '### K-Means experiments results\n'
+    results_to_save += 'Except K, the other parameters are the default ones (eg. euclidean distance)\n'
 
     for path in paths:
         results_to_save += f'{path["name"]} dataset\n'
@@ -126,7 +124,7 @@ def run_kmeans(paths: List[Dict[str, str]], params):
                            algorithm_params=alg_params,
                            metric='calinski_harabasz_score',
                            metric_params={'X': X.values},
-                           k_values=list(range(2, 10)),
+                           k_values=list(range(2, 15)),
                            goal='minimize')
 
         results_to_save = generate_results(X, Y, results, results_to_save)

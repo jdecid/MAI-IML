@@ -205,6 +205,7 @@ class KMeans:
             centroids = pca.transform(centroids)
 
         f = plt.figure(figsize=(4, 4))
+        plt.title(f'Clustering {self.name} data with K={self.K}')
 
         # Visualization for 3D
         if self.vis_dims == 3:

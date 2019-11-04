@@ -24,9 +24,9 @@ metrics = {
 def plot_k_metrics(data, alg_name: str, alg_params: dict, metric: str):
     plt.figure()
 
-    plt.title('Scores for different K')
+    plt.title(f'Evolution of {metrics[metric].__name__} for K')
     plt.xlabel('K')
-    plt.ylabel(metrics[metric].__name__)
+    plt.ylabel('Score')
 
     plt.plot(
         list(map(lambda x: x['k'], data)),
