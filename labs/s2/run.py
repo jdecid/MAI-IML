@@ -174,6 +174,14 @@ def run_kmodes(paths: List[Dict[str, str]], params):
         f.write(results_to_save)
 
 
+def get_cat_idx(df):
+    cat_idx = []
+    for index, (name, values) in enumerate(df.iteritems()):
+        if isinstance(values[0], str):
+            cat_idx.append(index)
+    return cat_idx
+
+
 def run_kprototypes(paths: List[Dict[str, str]], params):
     message = 'Running K-Prototypes experiments'
     print(message + '...')
@@ -188,7 +196,7 @@ def run_kprototypes(paths: List[Dict[str, str]], params):
         # Optimization of K
 
         alg_params = {'name': path['name'], 'fig_save_path': params.output_path}
-        alg = KPrototypes(K=1, **alg_params)
+        alg = KPrototypes(K=1, cat_idx=get_cat_idx(X), **alg_params)
         precomputed_distances = alg.compute_point_wise_distances(X.values)
         results = optimize(X=X.values,
                            algorithm=KPrototypes,
@@ -255,6 +263,7 @@ def main(params):
         datasets += [
             {'name': 'connect-4', 'X': file_connect_4_num, 'Y': file_connect_4_y, 'type': 'num'},
             {'name': 'connect-4', 'X': file_connect_4_cat, 'Y': file_connect_4_y, 'type': 'cat'},
+            {'name': 'connect-4', 'X': file_connect_4_cat, 'Y': file_connect_4_y, 'type': 'mix'}
         ]
 
     if params.dataset == 'segment' or params.dataset is None:
@@ -262,10 +271,12 @@ def main(params):
         datasets += [
             {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y, 'type': 'num'},
             {'name': 'segment', 'X': file_segment_cat, 'Y': file_segment_y, 'type': 'cat'},
+            {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y, 'type': 'mix'},
         ]
 
     num_paths = list(filter(lambda d: d['type'] == 'num', datasets))
     cat_paths = list(filter(lambda d: d['type'] == 'cat', datasets))
+    mix_paths = list(filter(lambda d: d['type'] == 'mix', datasets))  # original
 
     if params.algorithm == 'agglomerative' or params.algorithm is None:
         run_agglomerative(paths=num_paths, params=params)
@@ -277,7 +288,7 @@ def main(params):
         run_kmodes(paths=cat_paths, params=params)
 
     if params.algorithm == 'kprototypes' or params.algorithm is None:
-        run_kprototypes(paths=datasets, params=params)
+        run_kprototypes(paths=mix_paths, params=params)
 
     if params.algorithm == 'fcm' or params.algorithm is None:
         run_fcm(paths=num_paths, params=params)
