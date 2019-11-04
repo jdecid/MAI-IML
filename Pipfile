@@ -4,6 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+ipykernel = "*"
 sphinx = "*"
 sphinx-bootstrap-theme = "*"
 
@@ -12,7 +13,6 @@ numpy = "*"
 scipy = "*"
 scikit-learn = "*"
 pandas = "*"
-ipykernel = "*"
 tqdm = "*"
 matplotlib = "==3.0.0"
 

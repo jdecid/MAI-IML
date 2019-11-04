@@ -82,7 +82,7 @@ def run_agglomerative(paths: List[Dict[str, str]], params):
     logging.info(message)
     results_to_save = '### Agglomerative Clustering experiments results\n'
     results_to_save += 'Default parameters except for the number of clusters, affinity and linkage.\n'
-    results_to_save += 'We set #clusters as #classes.'
+    results_to_save += 'We set #clusters as #classes.\n'
 
     for path in paths:
         results_to_save += f'{path["name"]} dataset\n'
@@ -98,10 +98,10 @@ def run_agglomerative(paths: List[Dict[str, str]], params):
             results_to_save += f'Results with affinity {result["affinity"]} and linkage {result["linkage"]}\n'
             # Supervised evaluation (we are using k = # classes)
             res = evaluate.evaluate_supervised(labels_true=Y.values.flatten(), labels_pred=result['prediction'])
-            results_to_save += f'Supervised evaluation: {eval_dict_to_table(res)}\n'
+            results_to_save += f'Supervised evaluation:\n{eval_dict_to_table(res)}\n'
             # Unsupervised
             res = evaluate.evaluate_unsupervised(X=X, labels=result['prediction'])
-            results_to_save += f'Unsupervised evaluation: {eval_dict_to_table(res)}\n'
+            results_to_save += f'Unsupervised evaluation:\n{eval_dict_to_table(res)}\n'
 
     with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(results_to_save)
