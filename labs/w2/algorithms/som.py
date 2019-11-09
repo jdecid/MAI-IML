@@ -12,7 +12,7 @@ class SOM:
         self.model = SOFM(
             n_inputs=X.shape[1],
             features_grid=(20, 20),
-            learning_radius=4,
+            learning_radius=5,
             reduce_radius_after=50,
             step=0.5,
             std=1,
@@ -30,7 +30,7 @@ class SOM:
         return self.predict(X)
 
     def compute_heatmap(self):
-        weight = self.model.weight
+        weight = self.model.weight.reshape((self.model.n_inputs, 20, 20))
         heatmap = np.zeros(shape=(20, 20))
 
         for (neuron_x, neuron_y), neighbours in self.iter_neighbours(weight):
@@ -67,11 +67,11 @@ class SOM:
                 actions = rectangle_actions
 
             for shift_x, shift_y in actions:
-                neigbour_x = neuron_x + shift_x
-                neigbour_y = neuron_y + shift_y
+                neighbour_x = neuron_x + shift_x
+                neighbour_y = neuron_y + shift_y
 
-                if 0 <= neigbour_x < grid_height and 0 <= neigbour_y < grid_width:
-                    neighbours.append((neigbour_x, neigbour_y))
+                if 0 <= neighbour_x < grid_height and 0 <= neighbour_y < grid_width:
+                    neighbours.append((neighbour_x, neighbour_y))
 
             yield (neuron_x, neuron_y), neighbours
 
@@ -83,13 +83,14 @@ if __name__ == '__main__':
     import pandas as pd
     import matplotlib.pyplot as plt
 
-    df = pd.read_csv('banana.dat')
+    df = pd.read_csv('../datasets/segment_clean.csv')
 
     som = SOM()
-    som.fit(df.values, epochs=100, verbose=True)
-    heatmap = som.compute_heatmap()
+    som.fit(df.values, epochs=400, verbose=True)
+    hm = som.compute_heatmap()
 
-    plt.imshow(heatmap, cmap='Greys_r', interpolation='nearest')
+    plt.imshow(hm, cmap='Greys_r', interpolation='nearest')
+    plt.title('SOM Heatmap')
     plt.axis('off')
     plt.colorbar()
     plt.show()
