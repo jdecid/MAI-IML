@@ -7,6 +7,8 @@ verify_ssl = true
 ipykernel = "*"
 sphinx = "*"
 sphinx-bootstrap-theme = "*"
+stsci-rtd-theme = "*"
+sphinx-rtd-theme = "*"
 
 [packages]
 numpy = "*"

@@ -2,6 +2,7 @@ from typing import Union
 
 import numpy as np
 from sklearn.decomposition import PCA as SKPCA
+from sklearn.decomposition import IncrementalPCA as ISKPCA
 
 
 class PCA:
@@ -71,11 +72,13 @@ class PCA:
 
         cov_mat = phi_mat @ phi_mat.T
 
-        singular_values, singular_vectors = np.linalg.eig(cov_mat)
+        # singular_values, singular_vectors = np.linalg.eig(cov_mat)
+        svd = np.linalg.svd(cov_mat, compute_uv=True)
+        singular_values, singular_vectors = svd[1], svd[2]
 
-        eig = list(zip(singular_values, singular_vectors))
-        eig.sort(key=lambda x: x[0], reverse=True)
-        singular_values, singular_vectors = zip(*eig)
+        # eig = list(zip(singular_values, singular_vectors))
+        # eig.sort(key=lambda x: x[0], reverse=True)
+        # singular_values, singular_vectors = zip(*eig)
 
         self.singular_values_ = np.array(singular_values)
         self.explained_variance_ = (self.singular_values_ ** 2) / (X.shape[0] - 1)
@@ -88,7 +91,7 @@ class PCA:
         else:
             k = X.shape[1]
 
-        self.components_ = np.stack(singular_vectors[:k], axis=0)
+        self.components_ = singular_vectors
         self.n_components_ = k
 
         return self
@@ -134,19 +137,27 @@ if __name__ == '__main__':
 
     df = pd.read_csv('banana.dat')
 
-    pca = PCA(n_components=0.50)
+    pca = PCA(n_components=2)
     X = np.random.random(size=(100, 10))
     Xp = pca.fit_transform(df.values)
     print(pca.n_components_, pca.explained_variance_ratio_)
 
     import matplotlib.pyplot as plt
 
-    plt.scatter(Xp[:, 0], Xp[:, 1])
-    plt.show()
-    plt.close()
+    f, ax = plt.subplots(3, 1, figsize=(6, 12))
+
+    ax[0].scatter(Xp[:, 0], Xp[:, 1])
+    ax[0].set_title('IML PCA')
 
     Xp2 = SKPCA(n_components=2).fit_transform(df.values)
 
-    plt.scatter(Xp2[:, 0], Xp2[:, 1])
+    ax[1].scatter(Xp2[:, 0], Xp2[:, 1], c='darkred')
+    ax[1].set_title('SkLearn PCA')
+
+    Xp3 = ISKPCA(n_components=2).fit_transform(df.values)
+
+    ax[2].scatter(Xp3[:, 0], Xp3[:, 1], c='darkgreen')
+    ax[2].set_title('SkLearn Incremental PCA')
+
     plt.show()
-    plt.close()
+    plt.close(f)
