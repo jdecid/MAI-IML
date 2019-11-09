@@ -11,7 +11,7 @@ class PCA:
     ----------
     n_components : int, float, None
         Number of components to keep.
-        - If parameter is an int `n_components` >= 1, it is number of selected components.
+        - If parameter is an int `n_components` >= 1, it is the number of selected components.
         - If parameter is a float 0 < `n_components` < 1, it selects the number of components that explain at least
             this a variance equivalent to this value.
         - If `n_components` is None, all components are kept: n_components == n_features.
