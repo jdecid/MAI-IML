@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Clustering Project | MAI-IML'
+project = 'Principal Component Analysis and Self-Organizing Maps Exercise | MAI-IML'
 copyright = '2019, Jordi Armengol, Arnau Canyadell, Josep de Cid'
 author = 'Jordi Armengol, Arnau Canyadell, Josep de Cid'
 
@@ -111,7 +111,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'ClusteringProject-MAI-IMLdoc'
+htmlhelp_basename = 'PCA_SOM-MAI-IML Documentation'
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -156,8 +156,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'ClusteringProject-MAI-IML', 'Clustering Project - MAI-IML Documentation',
-     author, 'ClusteringProject-MAI-IML', 'One line description of project.',
+    (master_doc, 'PCA_SOM-MAI-IML',
+     'Principal Component Analysis and Self-Organizing Maps Exercise - MAI-IML Documentation',
+     author, 'PCA_SOM-MAI-IML', 'One line description of project.',
      'Miscellaneous'),
 ]
 
