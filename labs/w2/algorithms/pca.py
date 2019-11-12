@@ -1,3 +1,4 @@
+import os
 from typing import Union
 
 import matplotlib.pyplot as plt
@@ -23,6 +24,12 @@ class PCA:
             a variance equivalent to this value.
         - If `n_components` is None, all components are kept: n_components == n_features.
 
+    name: str
+        Identifiable name of the dataset used for plotting and printing purposes.
+
+    fig_save_path : str, None
+        Output path to save all generated figures. If None, those would be shown instead of being saved.
+
     Attributes
     ----------
     components_ : np.array, shape (`n_components_`, d_features)
@@ -45,9 +52,11 @@ class PCA:
         - Equivalent to d_features if not specified.
     """
 
-    def __init__(self, n_components: Union[int, float, None]):
+    def __init__(self, n_components: Union[int, float, None], name: str, fig_save_path: str = None):
         # Parameters
         self._n_components = n_components
+        self.fig_save_path = fig_save_path
+        self.name = name
 
         # Attributes
         self.components_: np.ndarray = None
@@ -77,7 +86,7 @@ class PCA:
         phi_mat = (X - self.mean_).T
 
         cov_mat = phi_mat @ phi_mat.T
-        PCA.__save_cov_matrix(cov_mat)
+        PCA.__save_cov_matrix(cov_mat, self.name, self.fig_save_path)
 
         # TODO: SVD vs EIG
 
@@ -152,11 +161,13 @@ class PCA:
             print(f'{i}) {values[i]}: {vectors[i, :]}')
 
     @staticmethod
-    def __save_cov_matrix(mat):
+    def __save_cov_matrix(mat: np.ndarray, name: str, save_path: str):
         f = plt.figure()
         plt.matshow(mat, cmap=plt.get_cmap('coolwarm'))
-        plt.title('Covariance matrix', y=1.08)
+        plt.title(f'Covariance matrix for {name} dataset', y=1.08)
         plt.colorbar()
-        # TODO: Save instead of show
-        plt.show()
+        if save_path is None:
+            plt.show()
+        else:
+            plt.savefig(os.path.join(save_path, f'cov_mat_{name}.png'))
         plt.close(f)
