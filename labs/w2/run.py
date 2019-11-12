@@ -1,21 +1,25 @@
 from typing import List
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA, IncrementalPCA
+from sklearn.decomposition import IncrementalPCA
+from sklearn.decomposition import PCA
 
-df = pd.read_csv('datasets/segment_clean.csv')
+from algorithms.pca import PCA as IMLPCA
 
 
 def compare_pca(X: np.ndarray, n_components: List[int]):
     for n in n_components:
-        f, ax = plt.subplots(1, 3, figsize=(8, 2))
+        f, ax = plt.subplots(1, 3, figsize=(10, 3))
+        f.tight_layout()
 
         # Our PCA
-        # TODO
+        pca = IMLPCA(n_components=n)
+        results_pca = pca.fit_transform(X)
+
         ax[0].set_title('Custom PCA')
-        ax[0].scatter([0.5], [0.5],
+        ax[0].scatter(results_pca[:, 0], results_pca[:, 1],
                       c='darkred', s=10, alpha=0.5)
 
         # PCA
@@ -30,7 +34,7 @@ def compare_pca(X: np.ndarray, n_components: List[int]):
         ipca = IncrementalPCA(n_components=n)
         results_ipca = ipca.fit_transform(X)
 
-        ax[2].set_title('SKLearn PCA')
+        ax[2].set_title('SKLearn Incremental PCA')
         ax[2].scatter(results_ipca[:, 0], results_ipca[:, 1],
                       c='teal', s=10, alpha=0.5)
 
@@ -38,4 +42,6 @@ def compare_pca(X: np.ndarray, n_components: List[int]):
         plt.close(f)
 
 
-compare_pca(df.values, [2, 3, 4, 5])
+if __name__ == '__main__':
+    df = pd.read_csv('datasets/segment_clean.csv')
+    compare_pca(df.values, [2])

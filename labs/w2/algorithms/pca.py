@@ -1,12 +1,18 @@
 from typing import Union
 
+import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.decomposition import PCA as SKPCA
-from sklearn.decomposition import IncrementalPCA as ISKPCA
 
 
 class PCA:
     """Principal component analysis (PCA)
+
+    Algorithm to transform multi-dimensional observations into a set of values of linearly uncorrelated variables called
+    principal components. The first principal component has the largest possible variance
+    (that is, accounts for as much of the variability in the data as possible), and each succeeding component in turn
+    has the highest variance possible under the constraint that it is orthogonal to the preceding components.
+    The resulting vectors (each being a linear combination of the variables and containing n observations)
+    are an uncorrelated orthogonal basis set. PCA is sensitive to the relative scaling of the original variables.
 
     Parameters
     ----------
@@ -19,20 +25,20 @@ class PCA:
 
     Attributes
     ----------
-    components_: np.array, shape (`n_components_`, d_features)
+    components_ : np.array, shape (`n_components_`, d_features)
         Principal axes in feature space of directions with maximum variance in the data.
         The components are sorted by `explained_variance_`.
 
-    explained_variance_: np.array
+    explained_variance_ : np.array
 
-    explained_variance_ratio_: np.array, shape (`n_components_`,)
+    explained_variance_ratio_ : np.array, shape (`n_components_`,)
 
-    singular_values_: np.array, shape(`n_components`,)
+    singular_values_ : np.array, shape(`n_components`,)
 
     mean_: np.array, shape(d_features,)
         Mean vector for all features, estimated empirically from the data.
 
-    n_components_: int
+    n_components_ : int
         Number of components selected to use:
         - Equivalent to parameter `n_components` if it is an int.
         - Estimated from the input data if it is a float.
@@ -57,9 +63,9 @@ class PCA:
         Parameters
         ----------
         X : np.ndarray, shape (n_samples, d_features)
-            Training data where
-            - n_samples is the number of samples
-            - d_features is the number of features
+            Training data where:
+            - n_samples is the number of rows (samples).
+            - d_features is the number of columns (features).
 
         Returns
         -------
@@ -71,16 +77,25 @@ class PCA:
         phi_mat = (X - self.mean_).T
 
         cov_mat = phi_mat @ phi_mat.T
+        PCA.__save_cov_matrix(cov_mat)
 
-        # singular_values, singular_vectors = np.linalg.eig(cov_mat)
-        svd = np.linalg.svd(cov_mat, compute_uv=True)
-        singular_values, singular_vectors = svd[1], svd[2]
+        # TODO: SVD vs EIG
 
-        # eig = list(zip(singular_values, singular_vectors))
+        # TODO: Use eigh (Eigenvalue decomposition for Hermitan matrix)
+        # Using Eigenvalues and Eigenvectors
+        eig_values, eig_vectors = np.linalg.eig(cov_mat)
+        eig_vectors = eig_vectors.T
+        # eig = list(zip(eig_values, eig_vectors))
         # eig.sort(key=lambda x: x[0], reverse=True)
-        # singular_values, singular_vectors = zip(*eig)
+        # eig_values, eig_vectors = zip(*eig)
+        # eig_values, eig_vectors = np.array(eig_values), np.array(eig_vectors)
 
-        self.singular_values_ = np.array(singular_values)
+        # Using Singular Value Decomposition
+        _, singular_values, singular_vectors = np.linalg.svd(cov_mat, compute_uv=True)
+
+        # PCA.__display_eig(singular_values, singular_vectors)
+
+        self.singular_values_ = eig_values
         self.explained_variance_ = (self.singular_values_ ** 2) / (X.shape[0] - 1)
         self.explained_variance_ratio_ = self.explained_variance_ / self.explained_variance_.sum()
 
@@ -91,7 +106,7 @@ class PCA:
         else:
             k = X.shape[1]
 
-        self.components_ = singular_vectors
+        self.components_ = np.absolute(eig_vectors)
         self.n_components_ = k
 
         return self
@@ -102,13 +117,13 @@ class PCA:
         Parameters
         ----------
         X : np.ndarray, shape (n_samples, d_features)
-            Training data where
-            - n_samples is the number of samples
-            - d_features is the number of features
+            Test data where:
+            - n_samples is the number of rows (samples).
+            - d_features is the number of columns (features).
 
         Returns
         -------
-        X_new : np.ndarray, shape (n_samples, self.n_components)
+        X_transformed : np.ndarray, shape (n_samples, self.n_components)
         """
         if self.components_ is None:
             raise Exception('Fit the model first before running a transformation')
@@ -120,44 +135,28 @@ class PCA:
         Parameters
         ----------
         X : np.ndarray, shape (n_samples, d_features)
-            Training data where
-            - n_samples is the number of samples
-            - d_features is the number of features
+            Training data where:
+            - n_samples is the number of rows (samples).
+            - d_features is the number of columns (features).
 
         Returns
         -------
-        X_new : np.ndarray, shape (n_samples, self.n_components)
+        X_transformed : np.ndarray, shape (n_samples, self.n_components)
         """
         self.fit(X)
         return self.transform(X)
 
+    @staticmethod
+    def __display_eig(values, vectors):
+        for i in range(len(values)):
+            print(f'{i}) {values[i]}: {vectors[i, :]}')
 
-if __name__ == '__main__':
-    import pandas as pd
-
-    df = pd.read_csv('banana.dat')
-
-    pca = PCA(n_components=2)
-    X = np.random.random(size=(100, 10))
-    Xp = pca.fit_transform(df.values)
-    print(pca.n_components_, pca.explained_variance_ratio_)
-
-    import matplotlib.pyplot as plt
-
-    f, ax = plt.subplots(3, 1, figsize=(6, 12))
-
-    ax[0].scatter(Xp[:, 0], Xp[:, 1])
-    ax[0].set_title('IML PCA')
-
-    Xp2 = SKPCA(n_components=2).fit_transform(df.values)
-
-    ax[1].scatter(Xp2[:, 0], Xp2[:, 1], c='darkred')
-    ax[1].set_title('SkLearn PCA')
-
-    Xp3 = ISKPCA(n_components=2).fit_transform(df.values)
-
-    ax[2].scatter(Xp3[:, 0], Xp3[:, 1], c='darkgreen')
-    ax[2].set_title('SkLearn Incremental PCA')
-
-    plt.show()
-    plt.close(f)
+    @staticmethod
+    def __save_cov_matrix(mat):
+        f = plt.figure()
+        plt.matshow(mat, cmap=plt.get_cmap('coolwarm'))
+        plt.title('Covariance matrix', y=1.08)
+        plt.colorbar()
+        # TODO: Save instead of show
+        plt.show()
+        plt.close(f)
