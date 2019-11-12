@@ -27,6 +27,16 @@ class PCA:
     name: str
         Identifiable name of the dataset used for plotting and printing purposes.
 
+    solver: str
+        Solving method for extracting eigenvalues. It may take three different values:
+        - `eig`: Uses `np.linalg.eig` to compute the eigenvalues and right eigenvectors of the covariance matrix.
+        - `hermitan`: Uses `np.linalg.eigh` which assumes the matrix is Hermitan (i.e. symmetric)
+            By default takes only the lower triangular part of the matrix and assumes that the upper triangular part
+            is defined by the symmetry of the matrix. This one is faster to compute.
+        - `svd`: Uses `np.linalg.svd` which is exactly the same for Hermitan matrices. However it's faster and
+            numerically more stable than calculate the eigenvalues and eigenvectors as it uses a Divide and Conquer
+            approaches instead of a plain QR factorization, which are less stable.
+
     fig_save_path : str, None
         Output path to save all generated figures. If None, those would be shown instead of being saved.
 
@@ -52,11 +62,15 @@ class PCA:
         - Equivalent to d_features if not specified.
     """
 
-    def __init__(self, n_components: Union[int, float, None], name: str, fig_save_path: str = None):
+    def __init__(self, n_components: Union[int, float, None], name: str, solver='eig', fig_save_path: str = None):
+        if solver not in ['eig', 'hermitan', 'svd']:
+            raise ValueError('Solver must be "eig", "hermitan", "svd"')
+
         # Parameters
         self._n_components = n_components
         self._fig_save_path = fig_save_path
         self._name = name
+        self._solver = solver
 
         # Attributes
         self.components_: np.ndarray = None
@@ -88,26 +102,21 @@ class PCA:
         cov_mat = phi_mat @ phi_mat.T
         PCA.__save_cov_matrix(cov_mat, self._name, self._fig_save_path)
 
-        # TODO: SVD vs EIG
-
-        # TODO: Use eigh (Eigenvalue decomposition for Hermitan matrix)
-        # Using Eigenvalues and Eigenvectors
-        eig_values, eig_vectors = np.linalg.eig(cov_mat)
-        eig_vectors = eig_vectors.T
-        eig = list(zip(eig_values, eig_vectors))
-        eig.sort(key=lambda x: x[0], reverse=True)
-        eig_values, eig_vectors = zip(*eig)
-        eig_values, eig_vectors = np.array(eig_values), np.array(eig_vectors)
-
-        # eig_values, eig_vectors = np.linalg.eigh(cov_mat)
-
-        # Using Singular Value Decomposition
-        _, singular_values, singular_vectors = np.linalg.svd(cov_mat, compute_uv=True)
+        if self._solver == 'eig':
+            # Using Eigenvalues and Eigenvectors
+            eig_values, eig_vectors = np.linalg.eig(cov_mat)
+            eig_values, eig_vectors = PCA.__sort_eigen(eig_values, eig_vectors)
+        elif self._solver == 'hermitan':
+            # Using Eigenvalues and Eigenvectors assuming Hermitan matrix
+            eig_values, eig_vectors = np.linalg.eigh(cov_mat)
+            eig_values, eig_vectors = PCA.__sort_eigen(eig_values, eig_vectors)
+        else:
+            # Using Singular Value Decomposition
+            _, eig_values, eig_vectors = np.linalg.svd(cov_mat, compute_uv=True)
 
         # PCA.__display_eig(singular_values, singular_vectors)
 
-        self.singular_values_ = eig_values
-        self.explained_variance_ = (self.singular_values_ ** 2) / (X.shape[0] - 1)
+        self.explained_variance_ = (eig_values ** 2) / (X.shape[0] - 1)
         self.explained_variance_ratio_ = self.explained_variance_ / self.explained_variance_.sum()
 
         if type(self._n_components) == int:
@@ -189,3 +198,11 @@ class PCA:
         else:
             plt.savefig(os.path.join(save_path, f'cov_mat_{name}.png'))
         plt.close(f)
+
+    @staticmethod
+    def __sort_eigen(values, vectors):
+        eig = list(zip(values, vectors.T))
+        eig.sort(key=lambda x: x[0], reverse=True)
+        values, vectors = zip(*eig)
+        values, vectors = np.array(values), np.array(vectors)
+        return values, vectors
