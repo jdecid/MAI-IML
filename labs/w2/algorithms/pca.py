@@ -157,6 +157,22 @@ class PCA:
         self.fit(X)
         return self.transform(X)
 
+    def inverse_transform(self, X: np.ndarray) -> np.ndarray:
+        """Reconstruct original data.
+        TODO: proper docstring
+
+        Parameters
+        ----------
+        X : np.ndarray,
+
+        Returns
+        -------
+        X_transformed : np.ndarray,
+        """
+        if self.components_ is None:
+            raise Exception('Fit the model first before running a transformation')
+        return X @ self.components_ + self.mean_
+
     @staticmethod
     def __display_eig(values, vectors):
         for i in range(len(values)):
