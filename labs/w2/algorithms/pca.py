@@ -92,7 +92,7 @@ class PCA:
 
         # TODO: Use eigh (Eigenvalue decomposition for Hermitan matrix)
         # Using Eigenvalues and Eigenvectors
-        eig_values, eig_vectors = np.linalg.eig(cov_mat)
+        eig_values, eig_vectors = np.linalg.eigh(cov_mat)
         eig_vectors = eig_vectors.T
         # eig = list(zip(eig_values, eig_vectors))
         # eig.sort(key=lambda x: x[0], reverse=True)
