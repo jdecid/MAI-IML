@@ -55,8 +55,8 @@ class PCA:
     def __init__(self, n_components: Union[int, float, None], name: str, fig_save_path: str = None):
         # Parameters
         self._n_components = n_components
-        self.fig_save_path = fig_save_path
-        self.name = name
+        self._fig_save_path = fig_save_path
+        self._name = name
 
         # Attributes
         self.components_: np.ndarray = None
@@ -86,18 +86,20 @@ class PCA:
         phi_mat = (X - self.mean_).T
 
         cov_mat = phi_mat @ phi_mat.T
-        PCA.__save_cov_matrix(cov_mat, self.name, self.fig_save_path)
+        PCA.__save_cov_matrix(cov_mat, self._name, self._fig_save_path)
 
         # TODO: SVD vs EIG
 
         # TODO: Use eigh (Eigenvalue decomposition for Hermitan matrix)
         # Using Eigenvalues and Eigenvectors
-        eig_values, eig_vectors = np.linalg.eigh(cov_mat)
+        eig_values, eig_vectors = np.linalg.eig(cov_mat)
         eig_vectors = eig_vectors.T
-        # eig = list(zip(eig_values, eig_vectors))
-        # eig.sort(key=lambda x: x[0], reverse=True)
-        # eig_values, eig_vectors = zip(*eig)
-        # eig_values, eig_vectors = np.array(eig_values), np.array(eig_vectors)
+        eig = list(zip(eig_values, eig_vectors))
+        eig.sort(key=lambda x: x[0], reverse=True)
+        eig_values, eig_vectors = zip(*eig)
+        eig_values, eig_vectors = np.array(eig_values), np.array(eig_vectors)
+
+        # eig_values, eig_vectors = np.linalg.eigh(cov_mat)
 
         # Using Singular Value Decomposition
         _, singular_values, singular_vectors = np.linalg.svd(cov_mat, compute_uv=True)
@@ -115,7 +117,7 @@ class PCA:
         else:
             k = X.shape[1]
 
-        self.components_ = np.absolute(eig_vectors)
+        self.components_ = eig_vectors[:k, :]
         self.n_components_ = k
 
         return self
