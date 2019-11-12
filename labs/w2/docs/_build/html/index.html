@@ -48,7 +48,7 @@
           
             <a href="#" class="icon icon-home"> Principal Component Analysis and Self-Organizing Maps Exercise | MAI-IML
             
-            <img src="_static/ub.png" class="logo" />
+            <img src="_static/stsci_pri_combo_mark_white.png" class="logo" />
           </a>
 
           
@@ -161,13 +161,19 @@
 <dt id="algorithms.pca.PCA">
 <em class="property">class </em><code class="sig-prename descclassname">algorithms.pca.</code><code class="sig-name descname">PCA</code><span class="sig-paren">(</span><em class="sig-param">n_components: Union[int, float, None]</em><span class="sig-paren">)</span><a class="headerlink" href="#algorithms.pca.PCA" title="Permalink to this definition">¶</a></dt>
 <dd><p>Principal component analysis (PCA)</p>
+<p>Algorithm to transform multi-dimensional observations into a set of values of linearly uncorrelated variables called
+principal components. The first principal component has the largest possible variance
+(that is, accounts for as much of the variability in the data as possible), and each succeeding component in turn
+has the highest variance possible under the constraint that it is orthogonal to the preceding components.
+The resulting vectors (each being a linear combination of the variables and containing n observations)
+are an uncorrelated orthogonal basis set. PCA is sensitive to the relative scaling of the original variables.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>n_components</strong> (<em>int, float, None</em>) – Number of components to keep.
-- If parameter is an int <cite>n_components</cite> &gt;= 1, it is number of selected components.
+- If parameter is an int <cite>n_components</cite> &gt;= 1, it is the number of selected components.
 - If parameter is a float 0 &lt; <cite>n_components</cite> &lt; 1, it selects the number of components that explain at least</p>
 <blockquote>
-<div><p>this a variance equivalent to this value.</p>
+<div><p>a variance equivalent to this value.</p>
 </div></blockquote>
 <ul class="simple">
 <li><p>If <cite>n_components</cite> is None, all components are kept: n_components == n_features.</p></li>
@@ -194,9 +200,9 @@ The components are sorted by <cite>explained_variance_</cite>.</p></li>
 <dd><p>Fit the model with X.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where
-- n_samples is the number of samples
-- d_features is the number of features</p>
+<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where:
+- n_samples is the number of rows (samples).
+- d_features is the number of columns (features).</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
@@ -213,12 +219,12 @@ The components are sorted by <cite>explained_variance_</cite>.</p></li>
 <dd><p>Fit the model with X and then apply the dimensionality reduction on X.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where
-- n_samples is the number of samples
-- d_features is the number of features</p>
+<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where:
+- n_samples is the number of rows (samples).
+- d_features is the number of columns (features).</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>X_new</strong></p>
+<dd class="field-even"><p><strong>X_transformed</strong></p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray, shape (n_samples, self.n_components)</p>
@@ -232,15 +238,120 @@ The components are sorted by <cite>explained_variance_</cite>.</p></li>
 <dd><p>Apply the dimensionality reduction on X.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where
-- n_samples is the number of samples
-- d_features is the number of features</p>
+<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Test data where:
+- n_samples is the number of rows (samples).
+- d_features is the number of columns (features).</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>X_new</strong></p>
+<dd class="field-even"><p><strong>X_transformed</strong></p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray, shape (n_samples, self.n_components)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-algorithms.kmeans"></span><dl class="class">
+<dt id="algorithms.kmeans.KMeans">
+<em class="property">class </em><code class="sig-prename descclassname">algorithms.kmeans.</code><code class="sig-name descname">KMeans</code><span class="sig-paren">(</span><em class="sig-param">K: int</em>, <em class="sig-param">name: str</em>, <em class="sig-param">max_it=1000</em>, <em class="sig-param">metric='euclidean'</em>, <em class="sig-param">vis_dims=0</em>, <em class="sig-param">fig_save_path: str = None</em>, <em class="sig-param">seed=1</em><span class="sig-paren">)</span><a class="headerlink" href="#algorithms.kmeans.KMeans" title="Permalink to this definition">¶</a></dt>
+<dd><p>K-Means Clustering Algorithm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>K</strong> (<em>int</em>) – Number of clusters.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Dataset name. Used for information and plotting proposes.</p></li>
+<li><p><strong>max_it</strong> (<em>int</em>) – Maximum number of iterations if convergence isn’t reached.</p></li>
+<li><p><strong>metric</strong> (<em>str</em>) – Distance function.
+Option to use euclidean, cityblock (Manhattan), or cosine distance.</p></li>
+<li><p><strong>vis_dims</strong> (<em>int</em>) – Visualization dimensions:
+- 0 if no visualization should be performed.
+- 2 for 2D plotting.
+- 3 for 3D plotting (doesn’t allow interactive visualization).</p></li>
+<li><p><strong>fig_save_path</strong> (<em>str</em>) – Output path to save all generated figures.
+If None, those would be shown instead of being saved.</p></li>
+<li><p><strong>seed</strong> (<em>int</em>) – Fix behaviour of random NumPy functions and allow reproducibility.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="algorithms.kmeans.KMeans.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">X: numpy.ndarray</em><span class="sig-paren">)</span> &#x2192; algorithms.kmeans.KMeans<a class="headerlink" href="#algorithms.kmeans.KMeans.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the model with X.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where:
+- n_samples is the number of rows (samples).
+- d_features is the number of columns (features).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>KMeans object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="algorithms.kmeans.KMeans.fit_predict">
+<code class="sig-name descname">fit_predict</code><span class="sig-paren">(</span><em class="sig-param">X: numpy.ndarray</em><span class="sig-paren">)</span> &#x2192; List[int]<a class="headerlink" href="#algorithms.kmeans.KMeans.fit_predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the model with X and apply clustering on X.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where:
+- n_samples is the number of rows (samples).
+- d_features is the number of columns (features).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X_clusters</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray, shape (n_samples,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="algorithms.kmeans.KMeans.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">X: numpy.ndarray</em><span class="sig-paren">)</span> &#x2192; Union[List[int], Tuple[List[int], numpy.ndarray]]<a class="headerlink" href="#algorithms.kmeans.KMeans.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply clustering to X.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Test data where:
+- n_samples is the number of rows (samples).
+- d_features is the number of columns (features).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X_clusters</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray, shape (n_samples,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-algorithms.kprototypes"></span><dl class="class">
+<dt id="algorithms.kprototypes.KPrototypes">
+<em class="property">class </em><code class="sig-prename descclassname">algorithms.kprototypes.</code><code class="sig-name descname">KPrototypes</code><span class="sig-paren">(</span><em class="sig-param">cat_idx</em>, <em class="sig-param">gamma=1</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#algorithms.kprototypes.KPrototypes" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="algorithms.kprototypes.KPrototypes.fit">
+<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">X: numpy.ndarray</em>, <em class="sig-param">max_it=20</em><span class="sig-paren">)</span><a class="headerlink" href="#algorithms.kprototypes.KPrototypes.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the model with X.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where:
+- n_samples is the number of rows (samples).
+- d_features is the number of columns (features).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>KMeans object</p>
 </dd>
 </dl>
 </dd></dl>
