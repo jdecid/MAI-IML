@@ -11,7 +11,7 @@ stsci-rtd-theme = "*"
 sphinx-rtd-theme = "*"
 
 [packages]
-numpy = "*"
+numpy = "==1.16.4"
 scipy = "*"
 scikit-learn = "*"
 pandas = "*"
