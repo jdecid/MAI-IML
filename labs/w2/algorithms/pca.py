@@ -133,6 +133,8 @@ class PCA:
         else:
             k = X.shape[1]
 
+        self.explained_variance_ = self.explained_variance_[:k]
+        self.explained_variance_ratio_ = self.explained_variance_ratio_[:k]
         self.components_ = eig_vectors[:k, :]
         self.eigen_values_ = eig_values[:k]
         self.n_components_ = k

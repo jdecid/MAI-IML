@@ -13,56 +13,69 @@ from sklearn.preprocessing import LabelEncoder
 
 from algorithms.kprototypes import KPrototypes
 from algorithms.pca import PCA as IML_PCA
-#from algorithms.som import SOM
+from algorithms.som import SOM
 from preprocessing import adult, connect_4, segment
 from utils.evaluate import evaluate_supervised, evaluate_unsupervised
 
 
 def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
-    X_transforms = {}  # dictionary to store transformations from our PCA implementation, in order to apply K-Prototypes
+    X_transforms = {}  # Dict to store transformations from our PCA implementation, in order to apply K-Prototypes
+    explained_variances = []
+
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X'])).values
         X_transforms[path['name']] = {}
 
         for n in n_components:
-            f, ax = plt.subplots(1, 3, figsize=(10, 3))
-            f.tight_layout()
+            logging.info(f'PCA with N = {n_components}')
 
             # Our PCA
-            pca = IML_PCA(n_components=n, name=path['name'])
-            X_transform = pca.fit_transform(X)
+            iml_pca = IML_PCA(n_components=n, name=path['name'])
+            X_transform = iml_pca.fit_transform(X)
             X_transforms[path['name']][n] = X_transform.copy()
-            X_reconstructed = pca.inverse_transform(X_transform)
+            X_reconstructed = iml_pca.inverse_transform(X_transform)
 
-            cov_f, cov_matrix = pca.get_cov_matrix(dataset_name=path['name'])
+            cov_f, cov_matrix = iml_pca.get_cov_matrix(dataset_name=path['name'])
             plt.savefig(os.path.join(params.output_path, f'cov_matrix_{path["name"]}.png'))
             plt.close(cov_f)
 
-            ax[0].set_title('Custom PCA')
-            ax[0].scatter(X_transform[:, 0], X_transform[:, 1], c='darkred', s=10, alpha=0.5)
-
-            print(np.cumsum(pca.explained_variance_ratio_))
+            explained_variances.append(np.cumsum(iml_pca.explained_variance_ratio_)[-1])
+            print(np.cumsum(iml_pca.explained_variance_ratio_))
 
             # PCA
             pca = PCA(n_components=n)
             X_transform = pca.fit_transform(X)
-
-            ax[1].set_title('SKLearn PCA')
-            ax[1].scatter(X_transform[:, 0], X_transform[:, 1], c='darkblue', s=10, alpha=0.5)
-
             print(np.cumsum(pca.explained_variance_ratio_))
 
             # Incremental PCA
-            pca = IncrementalPCA(n_components=n)
-            results_ipca = pca.fit_transform(X)
+            ipca = IncrementalPCA(n_components=n)
+            results_ipca = ipca.fit_transform(X)
+            print(np.cumsum(ipca.explained_variance_ratio_))
 
-            ax[2].set_title('SKLearn Incremental PCA')
-            ax[2].scatter(results_ipca[:, 0], results_ipca[:, 1], c='teal', s=10, alpha=0.5)
+            if n == 2:
+                f_2d, ax_2d = plt.subplots(1, 3, figsize=(20, 6))
+                f_2d.tight_layout()
 
-            print(np.cumsum(pca.explained_variance_ratio_))
+                ax_2d[0].set_title('Custom PCA')
+                ax_2d[0].scatter(X_transform[:, 0], X_transform[:, 1], c='darkred', s=10, alpha=0.5)
 
-            f.savefig(os.path.join(params.output_path, f'pca_comparative_{path["name"]}.png'))
-            plt.close(f)
+                ax_2d[1].set_title('SKLearn PCA')
+                ax_2d[1].scatter(X_transform[:, 0], X_transform[:, 1], c='darkblue', s=10, alpha=0.5)
+
+                ax_2d[2].set_title('SKLearn Incremental PCA')
+                ax_2d[2].scatter(results_ipca[:, 0], results_ipca[:, 1], c='teal', s=10, alpha=0.5)
+
+                f_2d.savefig(os.path.join(params.output_path, f'pca_comparative_{path["name"]}.png'))
+                plt.close(f_2d)
+
+    plt.plot(n_components, explained_variances)
+    plt.xticks(n_components)
+    plt.title(f'Evolution of explained variance with {path["name"]} dataset')
+    plt.xlabel('#components')
+    plt.ylabel('Explained variance')
+    plt.savefig(os.path.join(params.output_path, f'pca_evolution_{path["name"]}.png'))
+    plt.close()
+
     return X_transforms
 
 
@@ -142,7 +155,8 @@ def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data):
         for n_components in transformed_data[path['name']]:
             predicted = KPrototypes(K=n_classes, name=f"path['name'] {n_components} components",
                                     fig_save_path=params.output_path, cat_idx=get_cat_idx(transformed_data[path['name']]
-                                            [n_components])).fit_predict(transformed_data[path['name']][n_components])
+                                                                                          [n_components])).fit_predict(
+                transformed_data[path['name']][n_components])
             res_to_save += f'### With PCA ({n_components} components):\n'
             res_to_save += generate_results(X=transformed_data[path['name']][n_components], labels_pred=predicted,
                                             labels_true=Y.values.flatten()) + '\n'
@@ -180,7 +194,7 @@ def main(params):
     mix_paths = list(filter(lambda d: d['type'] == 'mix', datasets))
 
     if params.algorithm == 'PCA' or params.algorithm is None:
-        X_transforms = run_pca(paths=num_paths, n_components=[2], params=params)
+        X_transforms = run_pca(paths=num_paths, n_components=list(range(1, 10)), params=params)
         # run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
     if params.algorithm == 'SOM' or params.algorithm is None:
         run_som(paths=num_paths, params=params)
