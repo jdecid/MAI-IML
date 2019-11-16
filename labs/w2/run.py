@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import List, Dict
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from sklearn.decomposition import IncrementalPCA
 from sklearn.decomposition import PCA
@@ -40,6 +41,8 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
             ax[0].set_title('Custom PCA')
             ax[0].scatter(X_transform[:, 0], X_transform[:, 1], c='darkred', s=10, alpha=0.5)
 
+            print(np.cumsum(pca.explained_variance_ratio_))
+
             # PCA
             pca = PCA(n_components=n)
             X_transform = pca.fit_transform(X)
@@ -47,12 +50,16 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
             ax[1].set_title('SKLearn PCA')
             ax[1].scatter(X_transform[:, 0], X_transform[:, 1], c='darkblue', s=10, alpha=0.5)
 
+            print(np.cumsum(pca.explained_variance_ratio_))
+
             # Incremental PCA
-            ipca = IncrementalPCA(n_components=n)
-            results_ipca = ipca.fit_transform(X)
+            pca = IncrementalPCA(n_components=n)
+            results_ipca = pca.fit_transform(X)
 
             ax[2].set_title('SKLearn Incremental PCA')
             ax[2].scatter(results_ipca[:, 0], results_ipca[:, 1], c='teal', s=10, alpha=0.5)
+
+            print(np.cumsum(pca.explained_variance_ratio_))
 
             f.savefig(os.path.join(params.output_path, f'pca_comparative_{path["name"]}.png'))
             plt.close(f)
@@ -174,12 +181,13 @@ def main(params):
 
     if params.algorithm == 'PCA' or params.algorithm is None:
         X_transforms = run_pca(paths=num_paths, n_components=[2], params=params)
-        run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
+        # run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
     if params.algorithm == 'SOM' or params.algorithm is None:
         run_som(paths=num_paths, params=params)
 
 
 if __name__ == '__main__':
+    print(os.listdir('.'))
     parser = argparse.ArgumentParser(description='Run all PCA + SOM project of MAI-IML')
     parser.add_argument('output_path', type=str, default='output', help='Output path for the logs')
     parser.add_argument('--seed', type=int, help='Seed for random behavior reproducibility')
