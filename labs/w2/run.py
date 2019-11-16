@@ -13,10 +13,16 @@ from algorithms.pca import PCA as IML_PCA
 from algorithms.som import SOM
 from preprocessing import adult, connect_4, segment
 
+from algorithms.kprototypes import KPrototypes
+
+from utils.evaluate import evaluate_supervised, evaluate_unsupervised
+
 
 def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
+    X_transforms = {}  # dictionary to store transformations from our PCA implementation, in order to apply K-Prototypes
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X'])).values
+        X_transforms[path['name']] = {}
 
         for n in n_components:
             f, ax = plt.subplots(1, 3, figsize=(10, 3))
@@ -25,6 +31,7 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
             # Our PCA
             pca = IML_PCA(n_components=n, name=path['name'])
             X_transform = pca.fit_transform(X)
+            X_transforms[path['name']][n] = X_transform.copy()
             X_reconstructed = pca.inverse_transform(X_transform)
 
             cov_f, cov_matrix = pca.get_cov_matrix(dataset_name=path['name'])
@@ -50,6 +57,7 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
 
             f.savefig(os.path.join(params.output_path, f'pca_comparative_{path["name"]}.png'))
             plt.close(f)
+    return X_transforms
 
 
 def run_som(paths: List[Dict[str, str]], params):
@@ -65,6 +73,62 @@ def run_som(paths: List[Dict[str, str]], params):
         plt.axis('off')
         plt.colorbar()
         plt.savefig(os.path.join(params.output_path, f'som_{path["name"]}.png'))
+
+
+def get_cat_idx(df):
+    cat_idx = []
+    for index, (name, values) in enumerate(df.iteritems()):
+        if isinstance(values[0], str):
+            cat_idx.append(index)
+    return cat_idx
+
+
+def eval_dict_to_table(res):
+    table = '\n| Metric | Score |\n :---: | :---:'
+    for metric, score in res.items():
+        if metric != 'contingency_matrix':
+            table += f'\n {metric} | {score:.6f}'
+
+    if 'contingency_matrix' in res:
+        table += '\nContingency Matrix\n'
+        rows, cols = res['contingency_matrix'].shape[0], res['contingency_matrix'].shape[1]
+        table += '\n|' + ' |' * cols + '\n ' + ':---: |' * cols
+        for i in range(rows):
+            row = ' | '.join(list(map(str, res['contingency_matrix'][i, :])))
+            table += '\n' + row
+
+    return table
+
+
+def generate_results(X, labels_pred, labels_true):
+    res_print = ''
+    res_sup = evaluate_supervised(labels_pred=labels_pred, labels_true=labels_true)
+    res_unsup = evaluate_unsupervised(X=X, labels=labels_pred)
+    res_print += '\nSupervised evaluation:\n' + eval_dict_to_table(res_sup) + '\n'
+    res_print += '\nSupervised evaluation:\n' + eval_dict_to_table(res_unsup) + '\n'
+    return res_print
+
+
+def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data):
+    res_to_save = '### Evaluation of K-Prototypes (with K = n_classes) clustering with the original data (potentially' \
+                  'mixed attribute kinds) and the ones resulting from applying our PCA implementation\n\n'
+    for path in paths:
+        res_to_save += '## ' + path['name'] + '\n'
+        X = pd.read_csv(os.path.join('datasets', path['X'])).values
+        Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
+        n_classes = len(Y[Y.columns[0]].unique())
+        predicted = KPrototypes(K=n_classes, name=f"{path['name']} original", fig_save_path=params.output_path,
+                                  cat_idx=get_cat_idx(X)).fit_predict(X)
+        res_to_save += '# With original data:\n'
+        res_to_save += generate_results(X=X, labels_pred=predicted, labels_true=Y.values.flatten()) + '\n'
+        for n_components in transformed_data[path['name']]:
+            predicted = KPrototypes(K=n_classes, name=f"path['name'] {n_components} components",
+                                    fig_save_path=params.output_path, cat_idx=get_cat_idx(X)).fit_predict(
+                transformed_data[path['name']][n_components])
+            res_to_save += f'# With PCA ({n_components} components):\n'
+            res_to_save += generate_results(X=X, labels_pred=predicted, labels_true=Y.values.flatten()) + '\n'
+    with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
+        f.write(res_to_save)
 
 
 def main(params):
@@ -94,8 +158,10 @@ def main(params):
         ]
 
     num_paths = list(filter(lambda d: d['type'] == 'num', datasets))
-    run_pca(paths=num_paths, n_components=[2], params=params)
+    X_transforms = run_pca(paths=num_paths, n_components=[2], params=params)
     run_som(paths=num_paths, params=params)
+    mix_paths = list(filter(lambda d: d['type'] == 'mix', datasets))
+    run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
 
 
 if __name__ == '__main__':
