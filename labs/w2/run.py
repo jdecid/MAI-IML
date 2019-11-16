@@ -39,7 +39,7 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
             plt.savefig(os.path.join(params.output_path, f'cov_matrix_{path["name"]}.png'))
             plt.close(cov_f)
 
-            explained_variances.append(np.cumsum(iml_pca.explained_variance_ratio_)[-1])
+            explained_variances.append(100 * np.cumsum(iml_pca.explained_variance_ratio_)[-1])
             print(np.cumsum(iml_pca.explained_variance_ratio_))
 
             # PCA
@@ -71,8 +71,8 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
     plt.plot(n_components, explained_variances)
     plt.xticks(n_components)
     plt.title(f'Evolution of explained variance with {path["name"]} dataset')
-    plt.xlabel('#components')
-    plt.ylabel('Explained variance')
+    plt.xlabel('# components')
+    plt.ylabel('% explained variance')
     plt.savefig(os.path.join(params.output_path, f'pca_evolution_{path["name"]}.png'))
     plt.close()
 
