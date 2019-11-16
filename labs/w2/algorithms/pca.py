@@ -1,7 +1,10 @@
+import logging
 from typing import Union, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+from utils.plotting import mat_print
 
 
 class PCA:
@@ -54,7 +57,7 @@ class PCA:
         Percentage of the amount of variance explained by each of the selected `n_components`.
         If all the components are stored, this sum of all ratios is equal to 1.0.
 
-    singular_values_ : np.array, shape(`n_components`,)
+    eigen_values_ : np.array, shape(`n_components`,)
         Singular values associated to each of the selected `n_components` (eigenvectors).
 
     mean_: np.array, shape(`d_features`,)
@@ -81,7 +84,7 @@ class PCA:
         self.cov_mat_: np.ndarray = None
         self.explained_variance_ = None
         self.explained_variance_ratio_ = None
-        self.singular_values_ = None
+        self.eigen_values_ = None
         self.mean_ = None
         self.n_components_ = None
 
@@ -131,7 +134,15 @@ class PCA:
             k = X.shape[1]
 
         self.components_ = eig_vectors[:k, :]
+        self.eigen_values_ = eig_values[:k]
         self.n_components_ = k
+
+        logging.info(f'Original Matrix:\n{mat_print(X)}')
+        logging.info(f'Covariance Matrix:\n{mat_print(self.cov_mat_)}')
+        logging.info(f'Eigenvalues:\n{mat_print(self.eigen_values_)}')
+        logging.info(f'Eigenvectors:\n{mat_print(self.components_)}')
+        logging.info(f'Explained Variance:\n{mat_print(self.explained_variance_ratio_)}')
+        logging.info(f'Cumulative Explained Variance:\n{mat_print(np.cumsum(self.explained_variance_ratio_))}')
 
         return self
 
@@ -151,7 +162,10 @@ class PCA:
         """
         if self.components_ is None:
             raise Exception('Fit the model first before running a transformation')
-        return (self.components_ @ (X - self.mean_).T).T
+
+        X_transformed = (self.components_ @ (X - self.mean_).T).T
+        logging.info(f'Transformed X:\n{mat_print(X_transformed)}')
+        return X_transformed
 
     def fit_transform(self, X: np.ndarray) -> np.ndarray:
         """Fit the model with X and then apply the dimensionality reduction on X.

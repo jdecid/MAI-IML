@@ -8,13 +8,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.decomposition import IncrementalPCA
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import LabelEncoder
 
+from algorithms.kprototypes import KPrototypes
 from algorithms.pca import PCA as IML_PCA
 from algorithms.som import SOM
 from preprocessing import adult, connect_4, segment
-
-from algorithms.kprototypes import KPrototypes
-
 from utils.evaluate import evaluate_supervised, evaluate_unsupervised
 
 
@@ -63,10 +62,22 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
 def run_som(paths: List[Dict[str, str]], params):
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X'])).values
+        Y = pd.read_csv(os.path.join('datasets', path['Y']))
+        Y = LabelEncoder().fit_transform(Y)
 
-        som = SOM()
-        som.fit(X, epochs=20, shuffle=True, verbose=True)
-        heatmap = som.compute_heatmap()
+        som = SOM(
+            n_inputs=18,
+            features_grid=(40, 40),
+            learning_radius=5,
+            reduce_radius_after=50,
+            step=0.5,
+            std=1,
+            shuffle_data=True,
+            verbose=True
+        )
+
+        som.train(X, epochs=200)
+        heatmap = som.plot_heatmap(X, Y)
 
         plt.imshow(heatmap, cmap='Greys_r', interpolation='nearest')
         plt.title(f'SOM Heatmap for {path["name"]} dataset')
@@ -118,7 +129,7 @@ def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data):
         Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
         n_classes = len(Y[Y.columns[0]].unique())
         predicted = KPrototypes(K=n_classes, name=f"{path['name']} original", fig_save_path=params.output_path,
-                                  cat_idx=get_cat_idx(X)).fit_predict(X)
+                                cat_idx=get_cat_idx(X)).fit_predict(X)
         res_to_save += '# With original data:\n'
         res_to_save += generate_results(X=X, labels_pred=predicted, labels_true=Y.values.flatten()) + '\n'
         for n_components in transformed_data[path['name']]:
@@ -158,10 +169,13 @@ def main(params):
         ]
 
     num_paths = list(filter(lambda d: d['type'] == 'num', datasets))
-    X_transforms = run_pca(paths=num_paths, n_components=[2], params=params)
-    run_som(paths=num_paths, params=params)
     mix_paths = list(filter(lambda d: d['type'] == 'mix', datasets))
-    run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
+
+    if params.algorithm == 'PCA' or params.algorithm is None:
+        X_transforms = run_pca(paths=num_paths, n_components=[2], params=params)
+        run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
+    if params.algorithm == 'SOM' or params.algorithm is None:
+        run_som(paths=num_paths, params=params)
 
 
 if __name__ == '__main__':

@@ -1,39 +1,49 @@
 from itertools import product
 
 import numpy as np
+import matplotlib.pyplot as plt
 from neupy.algorithms import SOFM
 
+from utils.plotting import get_colors
 
-class SOM:
-    def __init__(self):
-        self.model: 'SOFM' = None
 
-    def fit(self, X: np.ndarray, epochs=100, shuffle=False, verbose=False):
-        self.model = SOFM(
-            n_inputs=X.shape[1],
-            features_grid=(20, 20),
-            learning_radius=5,
-            reduce_radius_after=50,
-            step=0.5,
-            std=1,
-            shuffle_data=shuffle,
-            verbose=verbose
-        )
+class SOM(SOFM):
+    """Self Organizing Map (SOM) wrapper.
 
-        self.model.train(X_train=X, epochs=epochs)
+    Parameters
+    ----------
 
-    def predict(self, X: np.ndarray):
-        return self.model.predict(X)
+    """
 
-    def fit_predict(self, X: np.ndarray, epochs=100, shuffle=False, verbose=False):
-        self.fit(X, epochs=epochs, shuffle=shuffle, verbose=verbose)
+    def fit_predict(self, X: np.ndarray, epochs=100):
+        self.train(X, epochs=epochs)
         return self.predict(X)
 
-    def compute_heatmap(self):
-        weight = self.model.weight.reshape((self.model.n_inputs, 20, 20))
-        heatmap = np.zeros(shape=(20, 20))
+    def plot_heatmap(self, X: np.ndarray, Y: np.ndarray):
+        heatmap = self.__compute_heatmap()
+        clusters = self.predict(X)
 
-        for (neuron_x, neuron_y), neighbours in self.iter_neighbours(weight):
+        f = plt.figure()
+        colors = get_colors(max(Y) + 1)
+
+        for actual_class, cluster_index in zip(Y, clusters):
+            cluster_x, cluster_y = divmod(cluster_index, self.features_grid[0])
+            plt.plot(cluster_x, cluster_y, marker='o', markeredgecolor=colors[actual_class],
+                     markersize=14, markeredgewidth=2, markerfacecolor='None')
+
+        plt.imshow(heatmap, cmap='Greys_r', interpolation='nearest')
+        plt.title(f'SOM Heatmap for connect-4 dataset')
+        plt.axis('off')
+        plt.colorbar()
+        plt.show()
+
+        return f
+
+    def __compute_heatmap(self):
+        weight = self.weight.reshape((self.n_inputs, self.features_grid[0], self.features_grid[1]))
+        heatmap = np.zeros(shape=(self.features_grid[0], self.features_grid[1]))
+
+        for (neuron_x, neuron_y), neighbours in self.__iter_neighbours(weight):
             total_distance = 0
 
             for (neighbour_x, neighbour_y) in neighbours:
@@ -48,8 +58,11 @@ class SOM:
 
         return heatmap
 
+    def score(self, X, y):
+        pass
+
     @staticmethod
-    def iter_neighbours(weights, hexagon=False):
+    def __iter_neighbours(weights, hexagon=False):
         _, grid_height, grid_width = weights.shape
 
         hexagon_even_actions = ((-1, 0), (0, -1), (1, 0), (0, 1), (1, 1), (-1, 1))
@@ -74,6 +87,3 @@ class SOM:
                     neighbours.append((neighbour_x, neighbour_y))
 
             yield (neuron_x, neuron_y), neighbours
-
-    def _init_nodes(self):
-        pass
