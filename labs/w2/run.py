@@ -140,7 +140,7 @@ def generate_results(X, labels_pred, labels_true):
     return res_print
 
 
-def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data):
+def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data=None):
     res_to_save = '# Evaluation of K-Prototypes (with K = n_classes) clustering with the original data (potentially' \
                   'mixed attribute kinds) and the ones resulting from applying our PCA implementation\n\n'
     for path in paths:
@@ -152,14 +152,15 @@ def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data):
                                 cat_idx=get_cat_idx(X)).fit_predict(X)
         res_to_save += '### With original data:\n'
         res_to_save += generate_results(X=X, labels_pred=predicted, labels_true=Y.values.flatten()) + '\n'
-        for n_components in transformed_data[path['name']]:
-            predicted = KPrototypes(K=n_classes, name=f"path['name'] {n_components} components",
-                                    fig_save_path=params.output_path, cat_idx=get_cat_idx(transformed_data[path['name']]
-                                                                                          [n_components])).fit_predict(
-                transformed_data[path['name']][n_components])
-            res_to_save += f'### With PCA ({n_components} components):\n'
-            res_to_save += generate_results(X=transformed_data[path['name']][n_components], labels_pred=predicted,
-                                            labels_true=Y.values.flatten()) + '\n'
+        if transformed_data is not None:
+            for n_components in transformed_data[path['name']]:
+                predicted = KPrototypes(K=n_classes, name=f"path['name'] {n_components} components",
+                                        fig_save_path=params.output_path, cat_idx=get_cat_idx(transformed_data[path['name']]
+                                                                                              [n_components])).fit_predict(
+                    transformed_data[path['name']][n_components])
+                res_to_save += f'### With PCA ({n_components} components):\n'
+                res_to_save += generate_results(X=transformed_data[path['name']][n_components], labels_pred=predicted,
+                                                labels_true=Y.values.flatten()) + '\n'
     with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(res_to_save)
 
@@ -195,9 +196,10 @@ def main(params):
 
     if params.algorithm == 'PCA' or params.algorithm is None:
         X_transforms = run_pca(paths=num_paths, n_components=list(range(1, 10)), params=params)
-        # run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
+        run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
     if params.algorithm == 'SOM' or params.algorithm is None:
         run_som(paths=num_paths, params=params)
+        run_kprototypes(paths=mix_paths, params=params)
 
 
 if __name__ == '__main__':
