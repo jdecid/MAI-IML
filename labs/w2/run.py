@@ -31,9 +31,9 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
 
             # Our PCA
             iml_pca = IML_PCA(n_components=n, name=path['name'])
-            X_transform = iml_pca.fit_transform(X)
-            X_transforms[path['name']][n] = X_transform.copy()
-            X_reconstructed = iml_pca.inverse_transform(X_transform)
+            X_transform_iml_pca = iml_pca.fit_transform(X)
+            X_transforms[path['name']][n] = X_transform_iml_pca.copy()
+            X_reconstructed = iml_pca.inverse_transform(X_transform_iml_pca)
 
             cov_f, cov_matrix = iml_pca.get_cov_matrix(dataset_name=path['name'])
             plt.savefig(os.path.join(params.output_path, f'cov_matrix_{path["name"]}.png'))
@@ -44,29 +44,50 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
 
             # PCA
             pca = PCA(n_components=n)
-            X_transform = pca.fit_transform(X)
+            X_transform_pca = pca.fit_transform(X)
             print(np.cumsum(pca.explained_variance_ratio_))
 
             # Incremental PCA
             ipca = IncrementalPCA(n_components=n)
-            results_ipca = ipca.fit_transform(X)
+            X_transform_ipca = ipca.fit_transform(X)
             print(np.cumsum(ipca.explained_variance_ratio_))
 
             if n == 2:
-                f_2d, ax_2d = plt.subplots(1, 3, figsize=(20, 6))
+                # Plot comparative with SKLearn methods
+                f_2d, ax_2d = plt.subplots(1, 3, figsize=(10, 3), dpi=200)
                 f_2d.tight_layout()
 
                 ax_2d[0].set_title('Custom PCA')
-                ax_2d[0].scatter(X_transform[:, 0], X_transform[:, 1], c='darkred', s=10, alpha=0.5)
+                ax_2d[0].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkred', s=10, alpha=0.5)
 
                 ax_2d[1].set_title('SKLearn PCA')
-                ax_2d[1].scatter(X_transform[:, 0], X_transform[:, 1], c='darkblue', s=10, alpha=0.5)
+                ax_2d[1].scatter(X_transform_pca[:, 0], X_transform_pca[:, 1], c='darkblue', s=10, alpha=0.5)
 
                 ax_2d[2].set_title('SKLearn Incremental PCA')
-                ax_2d[2].scatter(results_ipca[:, 0], results_ipca[:, 1], c='teal', s=10, alpha=0.5)
+                ax_2d[2].scatter(X_transform_ipca[:, 0], X_transform_ipca[:, 1], c='teal', s=10, alpha=0.5)
 
                 f_2d.savefig(os.path.join(params.output_path, f'pca_comparative_{path["name"]}.png'))
                 plt.close(f_2d)
+
+                # Plot comparative between different solvers
+                f_sol, ax_sol = plt.subplots(1, 3, figsize=(10, 3), dpi=200)
+                f_sol.tight_layout()
+
+                ax_sol[0].set_title('Eigen')
+                ax_sol[0].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkred', s=10, alpha=0.5)
+
+                iml_pca = IML_PCA(n_components=n, name=path['name'], solver='hermitan')
+                X_transform_iml_pca = iml_pca.fit_transform(X)
+                ax_sol[1].set_title('Hermitan Eigen')
+                ax_sol[1].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkorange', s=10, alpha=0.5)
+
+                iml_pca = IML_PCA(n_components=n, name=path['name'], solver='svd')
+                X_transform_iml_pca = iml_pca.fit_transform(X)
+                ax_sol[2].set_title('SVD')
+                ax_sol[2].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='magenta', s=10, alpha=0.5)
+
+                f_sol.savefig(os.path.join(params.output_path, f'pca_solvers_{path["name"]}.png'))
+                plt.close(f_sol)
 
     plt.plot(n_components, explained_variances)
     plt.xticks(n_components)
@@ -155,8 +176,9 @@ def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data=None):
         if transformed_data is not None:
             for n_components in transformed_data[path['name']]:
                 predicted = KPrototypes(K=n_classes, name=f"path['name'] {n_components} components",
-                                        fig_save_path=params.output_path, cat_idx=get_cat_idx(transformed_data[path['name']]
-                                                                                              [n_components])).fit_predict(
+                                        fig_save_path=params.output_path,
+                                        cat_idx=get_cat_idx(transformed_data[path['name']]
+                                                            [n_components])).fit_predict(
                     transformed_data[path['name']][n_components])
                 res_to_save += f'### With PCA ({n_components} components):\n'
                 res_to_save += generate_results(X=transformed_data[path['name']][n_components], labels_pred=predicted,
