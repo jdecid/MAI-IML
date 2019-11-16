@@ -19,9 +19,12 @@ class SOM(SOFM):
         self.train(X, epochs=epochs)
         return self.predict(X)
 
+    def __get_clusters_from_predict(self, C):
+        return np.where(C == 1)[0]
+
     def plot_heatmap(self, X: np.ndarray, Y: np.ndarray):
         heatmap = self.__compute_heatmap()
-        clusters = self.predict(X)
+        clusters = self.__get_clusters_from_predict(self.predict(X))
 
         f = plt.figure()
         colors = get_colors(max(Y) + 1)
