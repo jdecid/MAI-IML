@@ -20,9 +20,9 @@ from utils.evaluate import evaluate_supervised, evaluate_unsupervised
 
 def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
     X_transforms = {}  # Dict to store transformations from our PCA implementation, in order to apply K-Prototypes
-    explained_variances = []
 
     for path in paths:
+        explained_variances = []
         X = pd.read_csv(os.path.join('datasets', path['X'])).values
         X_transforms[path['name']] = {}
 
@@ -31,9 +31,9 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
 
             # Our PCA
             iml_pca = IML_PCA(n_components=n, name=path['name'])
-            X_transform_iml_pca = iml_pca.fit_transform(X)
-            X_transforms[path['name']][n] = X_transform_iml_pca.copy()
-            X_reconstructed = iml_pca.inverse_transform(X_transform_iml_pca)
+            X_transform = iml_pca.fit_transform(X)
+            X_transforms[path['name']][n] = X_transform.copy()
+            X_reconstructed = iml_pca.inverse_transform(X_transform)
 
             cov_f, cov_matrix = iml_pca.get_cov_matrix(dataset_name=path['name'])
             plt.savefig(os.path.join(params.output_path, f'cov_matrix_{path["name"]}.png'))
@@ -44,58 +44,37 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
 
             # PCA
             pca = PCA(n_components=n)
-            X_transform_pca = pca.fit_transform(X)
+            X_transform = pca.fit_transform(X)
             print(np.cumsum(pca.explained_variance_ratio_))
 
             # Incremental PCA
             ipca = IncrementalPCA(n_components=n)
-            X_transform_ipca = ipca.fit_transform(X)
+            results_ipca = ipca.fit_transform(X)
             print(np.cumsum(ipca.explained_variance_ratio_))
 
             if n == 2:
-                # Plot comparative with SKLearn methods
-                f_2d, ax_2d = plt.subplots(1, 3, figsize=(10, 3), dpi=200)
+                f_2d, ax_2d = plt.subplots(1, 3, figsize=(20, 6))
                 f_2d.tight_layout()
 
                 ax_2d[0].set_title('Custom PCA')
-                ax_2d[0].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkred', s=10, alpha=0.5)
+                ax_2d[0].scatter(X_transform[:, 0], X_transform[:, 1], c='darkred', s=10, alpha=0.5)
 
                 ax_2d[1].set_title('SKLearn PCA')
-                ax_2d[1].scatter(X_transform_pca[:, 0], X_transform_pca[:, 1], c='darkblue', s=10, alpha=0.5)
+                ax_2d[1].scatter(X_transform[:, 0], X_transform[:, 1], c='darkblue', s=10, alpha=0.5)
 
                 ax_2d[2].set_title('SKLearn Incremental PCA')
-                ax_2d[2].scatter(X_transform_ipca[:, 0], X_transform_ipca[:, 1], c='teal', s=10, alpha=0.5)
+                ax_2d[2].scatter(results_ipca[:, 0], results_ipca[:, 1], c='teal', s=10, alpha=0.5)
 
                 f_2d.savefig(os.path.join(params.output_path, f'pca_comparative_{path["name"]}.png'))
                 plt.close(f_2d)
 
-                # Plot comparative between different solvers
-                f_sol, ax_sol = plt.subplots(1, 3, figsize=(10, 3), dpi=200)
-                f_sol.tight_layout()
-
-                ax_sol[0].set_title('Eigen')
-                ax_sol[0].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkred', s=10, alpha=0.5)
-
-                iml_pca = IML_PCA(n_components=n, name=path['name'], solver='hermitan')
-                X_transform_iml_pca = iml_pca.fit_transform(X)
-                ax_sol[1].set_title('Hermitan Eigen')
-                ax_sol[1].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkorange', s=10, alpha=0.5)
-
-                iml_pca = IML_PCA(n_components=n, name=path['name'], solver='svd')
-                X_transform_iml_pca = iml_pca.fit_transform(X)
-                ax_sol[2].set_title('SVD')
-                ax_sol[2].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='magenta', s=10, alpha=0.5)
-
-                f_sol.savefig(os.path.join(params.output_path, f'pca_solvers_{path["name"]}.png'))
-                plt.close(f_sol)
-
-    plt.plot(n_components, explained_variances)
-    plt.xticks(n_components)
-    plt.title(f'Evolution of explained variance with {path["name"]} dataset')
-    plt.xlabel('# components')
-    plt.ylabel('% explained variance')
-    plt.savefig(os.path.join(params.output_path, f'pca_evolution_{path["name"]}.png'))
-    plt.close()
+        plt.plot(n_components, explained_variances)
+        plt.xticks(n_components)
+        plt.title(f'Evolution of explained variance with {path["name"]} dataset')
+        plt.xlabel('# components')
+        plt.ylabel('% explained variance')
+        plt.savefig(os.path.join(params.output_path, f'pca_evolution_{path["name"]}.png'))
+        plt.close()
 
     return X_transforms
 
@@ -108,7 +87,8 @@ def run_som(paths: List[Dict[str, str]], params):
 
         som = SOM(
             n_inputs=18,
-            features_grid=(40, 40),
+            features_grid=(10, 10),
+            #n_outputs=20,
             learning_radius=5,
             reduce_radius_after=50,
             step=0.5,
@@ -117,7 +97,7 @@ def run_som(paths: List[Dict[str, str]], params):
             verbose=True
         )
 
-        som.train(X, epochs=200)
+        som.train(X, epochs=500)
         heatmap = som.plot_heatmap(X, Y)
 
         plt.imshow(heatmap, cmap='Greys_r', interpolation='nearest')
@@ -130,7 +110,7 @@ def run_som(paths: List[Dict[str, str]], params):
 def get_cat_idx(array2d):
     cat_idx = []
     for j in range(array2d.shape[1]):
-        if isinstance(array2d[j], str):
+        if isinstance(array2d[j][0], str):
             cat_idx.append(j)
     return cat_idx
 
@@ -152,12 +132,17 @@ def eval_dict_to_table(res):
     return table
 
 
-def generate_results(X, labels_pred, labels_true):
+def generate_results(X, labels_pred, labels_true, cat_idx, params):
     res_print = ''
     res_sup = evaluate_supervised(labels_pred=labels_pred, labels_true=labels_true)
-    res_unsup = evaluate_unsupervised(X=X, labels=labels_pred)
+    if len(cat_idx) > 0 and params.unsupervised_metrics:
+        precomputed_distances = KPrototypes(K=1, cat_idx=cat_idx, name='precompute').compute_point_wise_distances(X)
+    else:
+        precomputed_distances = None
     res_print += '\nSupervised evaluation:\n' + eval_dict_to_table(res_sup) + '\n'
-    res_print += '\nUnsupervised evaluation:\n' + eval_dict_to_table(res_unsup) + '\n'
+    if params.unsupervised_metrics:
+        res_unsup = evaluate_unsupervised(X=X, labels=labels_pred, precomputed_distances=precomputed_distances)
+        res_print += '\nUnsupervised evaluation:\n' + eval_dict_to_table(res_unsup) + '\n'
     return res_print
 
 
@@ -169,22 +154,24 @@ def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data=None):
         X = pd.read_csv(os.path.join('datasets', path['X'])).values
         Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
         n_classes = len(Y[Y.columns[0]].unique())
+        cat_idx = get_cat_idx(X)
         predicted = KPrototypes(K=n_classes, name=f"{path['name']} original", fig_save_path=params.output_path,
-                                cat_idx=get_cat_idx(X)).fit_predict(X)
+                                cat_idx=cat_idx).fit_predict(X)
         res_to_save += '### With original data:\n'
-        res_to_save += generate_results(X=X, labels_pred=predicted, labels_true=Y.values.flatten()) + '\n'
+        res_to_save += generate_results(X=X, labels_pred=predicted, labels_true=Y.values.flatten(),
+                                        cat_idx=cat_idx, params=params) + '\n'
         if transformed_data is not None:
             for n_components in transformed_data[path['name']]:
                 predicted = KPrototypes(K=n_classes, name=f"path['name'] {n_components} components",
                                         fig_save_path=params.output_path,
-                                        cat_idx=get_cat_idx(transformed_data[path['name']]
-                                                            [n_components])).fit_predict(
-                    transformed_data[path['name']][n_components])
+                                        cat_idx=get_cat_idx(transformed_data[path['name']][n_components])).fit_predict(
+                                        transformed_data[path['name']][n_components])
                 res_to_save += f'### With PCA ({n_components} components):\n'
                 res_to_save += generate_results(X=transformed_data[path['name']][n_components], labels_pred=predicted,
-                                                labels_true=Y.values.flatten()) + '\n'
+                                                labels_true=Y.values.flatten(), cat_idx=[], params=params) + '\n'
     with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(res_to_save)
+
 
 
 def main(params):
@@ -217,11 +204,12 @@ def main(params):
     mix_paths = list(filter(lambda d: d['type'] == 'mix', datasets))
 
     if params.algorithm == 'PCA' or params.algorithm is None:
-        X_transforms = run_pca(paths=num_paths, n_components=list(range(1, 10)), params=params)
+        X_transforms = run_pca(paths=num_paths, n_components=list(range(1, 11)), params=params)
         run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
     if params.algorithm == 'SOM' or params.algorithm is None:
         run_som(paths=num_paths, params=params)
-        run_kprototypes(paths=mix_paths, params=params)
+        if params.algorithm is not None:
+            run_kprototypes(paths=mix_paths, params=params)
 
 
 if __name__ == '__main__':
@@ -234,6 +222,10 @@ if __name__ == '__main__':
                         choices=['PCA', 'SOM'])
     parser.add_argument('--dataset', type=str, help='Select dataset to use',
                         choices=['adult', 'connect-4', 'segment'])
+
+    parser.add_argument('--unsupervised_metrics', help='Whether to compute unsupervised metrics (it takes'
+                                                                 'a while in the case of the mixed dataset, Adult)',
+                        action="store_true", default=False)
 
     args = parser.parse_args()
 
