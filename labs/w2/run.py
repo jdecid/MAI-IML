@@ -12,7 +12,7 @@ from sklearn.preprocessing import LabelEncoder
 
 from algorithms.kprototypes import KPrototypes
 from algorithms.pca import PCA as IML_PCA
-from algorithms.som import SOM
+#from algorithms.som import SOM
 from preprocessing import adult, connect_4, segment
 from utils.evaluate import evaluate_supervised, evaluate_unsupervised
 
@@ -86,11 +86,11 @@ def run_som(paths: List[Dict[str, str]], params):
         plt.savefig(os.path.join(params.output_path, f'som_{path["name"]}.png'))
 
 
-def get_cat_idx(df):
+def get_cat_idx(array2d):
     cat_idx = []
-    for index, (name, values) in enumerate(df.iteritems()):
-        if isinstance(values[0], str):
-            cat_idx.append(index)
+    for j in range(array2d.shape[1]):
+        if isinstance(array2d[j], str):
+            cat_idx.append(j)
     return cat_idx
 
 
@@ -116,12 +116,12 @@ def generate_results(X, labels_pred, labels_true):
     res_sup = evaluate_supervised(labels_pred=labels_pred, labels_true=labels_true)
     res_unsup = evaluate_unsupervised(X=X, labels=labels_pred)
     res_print += '\nSupervised evaluation:\n' + eval_dict_to_table(res_sup) + '\n'
-    res_print += '\nSupervised evaluation:\n' + eval_dict_to_table(res_unsup) + '\n'
+    res_print += '\nUnsupervised evaluation:\n' + eval_dict_to_table(res_unsup) + '\n'
     return res_print
 
 
 def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data):
-    res_to_save = '### Evaluation of K-Prototypes (with K = n_classes) clustering with the original data (potentially' \
+    res_to_save = '# Evaluation of K-Prototypes (with K = n_classes) clustering with the original data (potentially' \
                   'mixed attribute kinds) and the ones resulting from applying our PCA implementation\n\n'
     for path in paths:
         res_to_save += '## ' + path['name'] + '\n'
@@ -130,14 +130,15 @@ def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data):
         n_classes = len(Y[Y.columns[0]].unique())
         predicted = KPrototypes(K=n_classes, name=f"{path['name']} original", fig_save_path=params.output_path,
                                 cat_idx=get_cat_idx(X)).fit_predict(X)
-        res_to_save += '# With original data:\n'
+        res_to_save += '### With original data:\n'
         res_to_save += generate_results(X=X, labels_pred=predicted, labels_true=Y.values.flatten()) + '\n'
         for n_components in transformed_data[path['name']]:
             predicted = KPrototypes(K=n_classes, name=f"path['name'] {n_components} components",
-                                    fig_save_path=params.output_path, cat_idx=get_cat_idx(X)).fit_predict(
-                transformed_data[path['name']][n_components])
-            res_to_save += f'# With PCA ({n_components} components):\n'
-            res_to_save += generate_results(X=X, labels_pred=predicted, labels_true=Y.values.flatten()) + '\n'
+                                    fig_save_path=params.output_path, cat_idx=get_cat_idx(transformed_data[path['name']]
+                                            [n_components])).fit_predict(transformed_data[path['name']][n_components])
+            res_to_save += f'### With PCA ({n_components} components):\n'
+            res_to_save += generate_results(X=transformed_data[path['name']][n_components], labels_pred=predicted,
+                                            labels_true=Y.values.flatten()) + '\n'
     with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
         f.write(res_to_save)
 
