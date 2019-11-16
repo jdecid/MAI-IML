@@ -70,6 +70,3 @@ def preprocess():
     y.to_csv(os.path.join('datasets', 'adult_clean_y.csv'), index=False, header=False)
 
     return 'adult_clean_num.csv', 'adult_clean_cat.csv', 'adult_clean.csv', 'adult_clean_y.csv'
-
-
-preprocess()
