@@ -77,20 +77,3 @@ class SOM:
 
     def _init_nodes(self):
         pass
-
-
-if __name__ == '__main__':
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
-    df = pd.read_csv('../datasets/segment_clean.csv')
-
-    som = SOM()
-    som.fit(df.values, epochs=400, verbose=True)
-    hm = som.compute_heatmap()
-
-    plt.imshow(hm, cmap='Greys_r', interpolation='nearest')
-    plt.title('SOM Heatmap')
-    plt.axis('off')
-    plt.colorbar()
-    plt.show()

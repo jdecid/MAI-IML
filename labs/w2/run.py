@@ -10,31 +10,36 @@ from sklearn.decomposition import IncrementalPCA
 from sklearn.decomposition import PCA
 
 from algorithms.pca import PCA as IML_PCA
+from algorithms.som import SOM
 from preprocessing import adult, connect_4, segment
 
 
 def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X'])).values
-        # Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
 
         for n in n_components:
             f, ax = plt.subplots(1, 3, figsize=(10, 3))
             f.tight_layout()
 
             # Our PCA
-            pca = IML_PCA(n_components=n, name=path['name'], fig_save_path=params.output_path)
-            results_pca = pca.fit_transform(X)
+            pca = IML_PCA(n_components=n, name=path['name'])
+            X_transform = pca.fit_transform(X)
+            X_reconstructed = pca.inverse_transform(X_transform)
+
+            cov_f, cov_matrix = pca.get_cov_matrix(dataset_name=path['name'])
+            plt.savefig(os.path.join(params.output_path, f'cov_matrix_{path["name"]}.png'))
+            plt.close(cov_f)
 
             ax[0].set_title('Custom PCA')
-            ax[0].scatter(results_pca[:, 0], results_pca[:, 1], c='darkred', s=10, alpha=0.5)
+            ax[0].scatter(X_transform[:, 0], X_transform[:, 1], c='darkred', s=10, alpha=0.5)
 
             # PCA
             pca = PCA(n_components=n)
-            results_pca = pca.fit_transform(X)
+            X_transform = pca.fit_transform(X)
 
             ax[1].set_title('SKLearn PCA')
-            ax[1].scatter(results_pca[:, 0], results_pca[:, 1], c='darkblue', s=10, alpha=0.5)
+            ax[1].scatter(X_transform[:, 0], X_transform[:, 1], c='darkblue', s=10, alpha=0.5)
 
             # Incremental PCA
             ipca = IncrementalPCA(n_components=n)
@@ -45,6 +50,21 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
 
             f.savefig(os.path.join(params.output_path, f'pca_comparative_{path["name"]}.png'))
             plt.close(f)
+
+
+def run_som(paths: List[Dict[str, str]], params):
+    for path in paths:
+        X = pd.read_csv(os.path.join('datasets', path['X'])).values
+
+        som = SOM()
+        som.fit(X, epochs=20, shuffle=True, verbose=True)
+        heatmap = som.compute_heatmap()
+
+        plt.imshow(heatmap, cmap='Greys_r', interpolation='nearest')
+        plt.title(f'SOM Heatmap for {path["name"]} dataset')
+        plt.axis('off')
+        plt.colorbar()
+        plt.savefig(os.path.join(params.output_path, f'som_{path["name"]}.png'))
 
 
 def main(params):
@@ -75,6 +95,7 @@ def main(params):
 
     num_paths = list(filter(lambda d: d['type'] == 'num', datasets))
     run_pca(paths=num_paths, n_components=[2], params=params)
+    run_som(paths=num_paths, params=params)
 
 
 if __name__ == '__main__':

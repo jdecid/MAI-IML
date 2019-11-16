@@ -1,5 +1,4 @@
-import os
-from typing import Union
+from typing import Union, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,23 +36,29 @@ class PCA:
             numerically more stable than calculate the eigenvalues and eigenvectors as it uses a Divide and Conquer
             approaches instead of a plain QR factorization, which are less stable.
 
-    fig_save_path : str, None
-        Output path to save all generated figures. If None, those would be shown instead of being saved.
-
     Attributes
     ----------
-    components_ : np.array, shape (`n_components_`, d_features)
+    components_ : np.array, shape (`n_components`, `d_features`)
         Principal axes in feature space of directions with maximum variance in the data.
-        The components are sorted by `explained_variance_`.
+        The components are sorted from largest to smallest associated eigenvalue,
+        which is equivalent to sort descending by explained variance.
+
+    cov_mat_ : np.array, shape (`d_features`, `d_features`)
+        Covariance matrix of the training data.
 
     explained_variance_ : np.array
+        The amount of variance explained by each of the selected `n_components`.
+        Equivalent to n_components largest eigenvalues of `cov_mat`.
 
-    explained_variance_ratio_ : np.array, shape (`n_components_`,)
+    explained_variance_ratio_ : np.array, shape (`n_components`,)
+        Percentage of the amount of variance explained by each of the selected `n_components`.
+        If all the components are stored, this sum of all ratios is equal to 1.0.
 
     singular_values_ : np.array, shape(`n_components`,)
+        Singular values associated to each of the selected `n_components` (eigenvectors).
 
-    mean_: np.array, shape(d_features,)
-        Mean vector for all features, estimated empirically from the data.
+    mean_: np.array, shape(`d_features`,)
+        Mean vector for all features, estimated empirically from the training data.
 
     n_components_ : int
         Number of components selected to use:
@@ -62,18 +67,18 @@ class PCA:
         - Equivalent to d_features if not specified.
     """
 
-    def __init__(self, n_components: Union[int, float, None], name: str, solver='eig', fig_save_path: str = None):
+    def __init__(self, n_components: Union[int, float, None], name: str, solver='eig'):
         if solver not in ['eig', 'hermitan', 'svd']:
             raise ValueError('Solver must be "eig", "hermitan", "svd"')
 
         # Parameters
         self._n_components = n_components
-        self._fig_save_path = fig_save_path
         self._name = name
         self._solver = solver
 
         # Attributes
         self.components_: np.ndarray = None
+        self.cov_mat_: np.ndarray = None
         self.explained_variance_ = None
         self.explained_variance_ratio_ = None
         self.singular_values_ = None
@@ -99,20 +104,19 @@ class PCA:
 
         phi_mat = (X - self.mean_).T
 
-        cov_mat = phi_mat @ phi_mat.T
-        PCA.__save_cov_matrix(cov_mat, self._name, self._fig_save_path)
+        self.cov_mat_ = phi_mat @ phi_mat.T
 
         if self._solver == 'eig':
             # Using Eigenvalues and Eigenvectors
-            eig_values, eig_vectors = np.linalg.eig(cov_mat)
+            eig_values, eig_vectors = np.linalg.eig(self.cov_mat_)
             eig_values, eig_vectors = PCA.__sort_eigen(eig_values, eig_vectors)
         elif self._solver == 'hermitan':
             # Using Eigenvalues and Eigenvectors assuming Hermitan matrix
-            eig_values, eig_vectors = np.linalg.eigh(cov_mat)
+            eig_values, eig_vectors = np.linalg.eigh(self.cov_mat_)
             eig_values, eig_vectors = PCA.__sort_eigen(eig_values, eig_vectors)
         else:
             # Using Singular Value Decomposition
-            _, eig_values, eig_vectors = np.linalg.svd(cov_mat, compute_uv=True)
+            _, eig_values, eig_vectors = np.linalg.svd(self.cov_mat_, compute_uv=True)
 
         # PCA.__display_eig(singular_values, singular_vectors)
 
@@ -166,38 +170,45 @@ class PCA:
         self.fit(X)
         return self.transform(X)
 
-    def inverse_transform(self, X: np.ndarray) -> np.ndarray:
-        """Reconstruct original data.
-        TODO: proper docstring
+    def inverse_transform(self, X_transformed: np.ndarray) -> np.ndarray:
+        """Reconstruct X_original from X which would be its transformation.
 
         Parameters
         ----------
-        X : np.ndarray,
+        X_transformed : np.ndarray, shape (`n_shape`, `n_components`)
+            Transformed X from original data obtained with `transform` or `fit_transform`.
 
         Returns
         -------
-        X_transformed : np.ndarray,
+        X_original : np.ndarray, shape (n_samples, d_features)
         """
         if self.components_ is None:
             raise Exception('Fit the model first before running a transformation')
-        return X @ self.components_ + self.mean_
+        return X_transformed @ self.components_ + self.mean_
+
+    def get_cov_matrix(self, dataset_name: str) -> Tuple[plt.Figure, plt.Axes]:
+        """Create covariance matrix Matplotlib figure.
+
+        Parameters
+        ----------
+        dataset_name : str
+            Dataset name used in the figure title.
+
+        Returns
+        -------
+        Cov_figure : plt.Axes
+
+        """
+        f, ax = plt.subplots(1, 1)
+        im = ax.matshow(self.cov_mat_, cmap=plt.get_cmap('coolwarm'))
+        ax.set_title(f'Covariance matrix for {dataset_name} dataset', y=1.08)
+        plt.colorbar(im, ax=ax)
+        return f, im
 
     @staticmethod
     def __display_eig(values, vectors):
         for i in range(len(values)):
             print(f'{i}) {values[i]}: {vectors[i, :]}')
-
-    @staticmethod
-    def __save_cov_matrix(mat: np.ndarray, name: str, save_path: str):
-        f = plt.figure()
-        plt.matshow(mat, cmap=plt.get_cmap('coolwarm'))
-        plt.title(f'Covariance matrix for {name} dataset', y=1.08)
-        plt.colorbar()
-        if save_path is None:
-            plt.show()
-        else:
-            plt.savefig(os.path.join(save_path, f'cov_mat_{name}.png'))
-        plt.close(f)
 
     @staticmethod
     def __sort_eigen(values, vectors):
