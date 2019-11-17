@@ -22,12 +22,14 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
     X_transforms = {}  # Dict to store transformations from our PCA implementation, in order to apply K-Prototypes
 
     for path in paths:
+        X_reconstructed = {}
         explained_variances = []
+
         X = pd.read_csv(os.path.join('datasets', path['X'])).values
         X_transforms[path['name']] = {}
 
         f = plt.figure()
-        plt.scatter(X[:, 9], X[:, 10])
+        plt.scatter(X[:, 0], X[:, 1])
         plt.title(f'{path["name"].capitalize()} dataset over its two first features')
         plt.xlabel('Feature #0')
         plt.ylabel('Feature #1')
@@ -41,7 +43,7 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
             iml_pca = IML_PCA(n_components=n, name=path['name'])
             X_transform_iml_pca = iml_pca.fit_transform(X)
             X_transforms[path['name']][n] = X_transform_iml_pca.copy()
-            X_reconstructed = iml_pca.inverse_transform(X_transform_iml_pca)
+            X_reconstructed[n] = iml_pca.inverse_transform(X_transform_iml_pca)
 
             cov_f, cov_matrix = iml_pca.get_cov_matrix(dataset_name=path['name'])
             plt.savefig(os.path.join(params.output_path, f'cov_matrix_{path["name"]}.png'))
@@ -78,32 +80,49 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
                 plt.close(f_2d)
 
                 # Plot comparative between different solvers
-                # f_sol, ax_sol = plt.subplots(1, 3, figsize=(10, 3), dpi=200)
-                # f_sol.tight_layout()
-                #
-                # ax_sol[0].set_title('Eigen')
-                # ax_sol[0].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkred', s=10, alpha=0.5)
-                #
-                # iml_pca = IML_PCA(n_components=n, name=path['name'], solver='hermitan')
-                # X_transform_iml_pca = iml_pca.fit_transform(X)
-                # ax_sol[1].set_title('Hermitan Eigen')
-                # ax_sol[1].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkorange', s=10, alpha=0.5)
-                #
-                # iml_pca = IML_PCA(n_components=n, name=path['name'], solver='svd')
-                # X_transform_iml_pca = iml_pca.fit_transform(X)
-                # ax_sol[2].set_title('SVD')
-                # ax_sol[2].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='magenta', s=10, alpha=0.5)
-                #
-                # f_sol.savefig(os.path.join(params.output_path, f'pca_solvers_{path["name"]}.png'))
-                # plt.close(f_sol)
+                f_sol, ax_sol = plt.subplots(1, 3, figsize=(10, 3), dpi=200)
+                f_sol.tight_layout()
 
+                ax_sol[0].set_title('Eigen')
+                ax_sol[0].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkred', s=10, alpha=0.5)
+
+                iml_pca = IML_PCA(n_components=n, name=path['name'], solver='hermitan')
+                X_transform_iml_pca = iml_pca.fit_transform(X)
+                ax_sol[1].set_title('Hermitan Eigen')
+                ax_sol[1].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkorange', s=10, alpha=0.5)
+
+                iml_pca = IML_PCA(n_components=n, name=path['name'], solver='svd')
+                X_transform_iml_pca = iml_pca.fit_transform(X)
+                ax_sol[2].set_title('SVD')
+                ax_sol[2].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='magenta', s=10, alpha=0.5)
+
+                f_sol.savefig(os.path.join(params.output_path, f'pca_solvers_{path["name"]}.png'))
+                plt.close(f_sol)
+
+        # Plot evolution of accuracies for different N
         plt.plot(n_components, explained_variances)
         plt.xticks(n_components)
+        plt.axhline(90, ls='--', c='red')
+        plt.axhline(95, ls='--', c='red')
+        plt.axhline(99, ls='--', c='red')
+
         plt.title(f'Evolution of explained variance with {path["name"]} dataset')
         plt.xlabel('# components')
         plt.ylabel('% explained variance')
+
         plt.savefig(os.path.join(params.output_path, f'pca_evolution_{path["name"]}.png'))
         plt.close()
+
+        # Plot reconstructed datasets with 2 components, explained variance of >90% and >99%.
+        f_rec, ax_rec = plt.subplots(1, 3, figsize=(15, 5), dpi=200)
+        plt.tight_layout()
+        for idx, n in enumerate([2, 7, 10]):
+            ax_rec[idx].scatter(X_reconstructed[n][:, 0], X_reconstructed[n][:, 1])
+            ax_rec[idx].set_title(f'Reconstructed {path["name"]} from {n} components')
+            ax_rec[idx].set_xlabel('Feature #0')
+            ax_rec[idx].set_ylabel('Feature #1')
+        plt.savefig(os.path.join(params.output_path, f'pca_reconstructed_{path["name"]}.png'))
+        plt.close(f_rec)
 
     return X_transforms
 
@@ -117,7 +136,7 @@ def run_som(paths: List[Dict[str, str]], params):
         som = SOM(
             n_inputs=18,
             features_grid=(10, 10),
-            #n_outputs=20,
+            # n_outputs=20,
             learning_radius=5,
             reduce_radius_after=50,
             step=0.5,
@@ -194,7 +213,7 @@ def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data=None):
                 predicted = KPrototypes(K=n_classes, name=f"path['name'] {n_components} components",
                                         fig_save_path=params.output_path,
                                         cat_idx=get_cat_idx(transformed_data[path['name']][n_components])).fit_predict(
-                                        transformed_data[path['name']][n_components])
+                    transformed_data[path['name']][n_components])
                 res_to_save += f'### With PCA ({n_components} components):\n'
                 res_to_save += generate_results(X=transformed_data[path['name']][n_components], labels_pred=predicted,
                                                 labels_true=Y.values.flatten(), cat_idx=[], params=params) + '\n'
@@ -252,7 +271,7 @@ if __name__ == '__main__':
                         choices=['adult', 'connect-4', 'segment'])
 
     parser.add_argument('--unsupervised_metrics', help='Whether to compute unsupervised metrics (it takes'
-                                                                 'a while in the case of the mixed dataset, Adult)',
+                                                       'a while in the case of the mixed dataset, Adult)',
                         action="store_true", default=False)
 
     args = parser.parse_args()
