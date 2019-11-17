@@ -26,6 +26,14 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
         X = pd.read_csv(os.path.join('datasets', path['X'])).values
         X_transforms[path['name']] = {}
 
+        f = plt.figure()
+        plt.scatter(X[:, 9], X[:, 10])
+        plt.title(f'{path["name"].capitalize()} dataset over its two first features')
+        plt.xlabel('Feature #0')
+        plt.ylabel('Feature #1')
+        plt.savefig(os.path.join(params.output_path, f'dataset_{path["name"]}.png'))
+        plt.close(f)
+
         for n in n_components:
             logging.info(f'PCA with N = {n_components}')
 
@@ -70,24 +78,24 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
                 plt.close(f_2d)
 
                 # Plot comparative between different solvers
-                f_sol, ax_sol = plt.subplots(1, 3, figsize=(10, 3), dpi=200)
-                f_sol.tight_layout()
-
-                ax_sol[0].set_title('Eigen')
-                ax_sol[0].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkred', s=10, alpha=0.5)
-
-                iml_pca = IML_PCA(n_components=n, name=path['name'], solver='hermitan')
-                X_transform_iml_pca = iml_pca.fit_transform(X)
-                ax_sol[1].set_title('Hermitan Eigen')
-                ax_sol[1].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkorange', s=10, alpha=0.5)
-
-                iml_pca = IML_PCA(n_components=n, name=path['name'], solver='svd')
-                X_transform_iml_pca = iml_pca.fit_transform(X)
-                ax_sol[2].set_title('SVD')
-                ax_sol[2].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='magenta', s=10, alpha=0.5)
-
-                f_sol.savefig(os.path.join(params.output_path, f'pca_solvers_{path["name"]}.png'))
-                plt.close(f_sol)
+                # f_sol, ax_sol = plt.subplots(1, 3, figsize=(10, 3), dpi=200)
+                # f_sol.tight_layout()
+                #
+                # ax_sol[0].set_title('Eigen')
+                # ax_sol[0].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkred', s=10, alpha=0.5)
+                #
+                # iml_pca = IML_PCA(n_components=n, name=path['name'], solver='hermitan')
+                # X_transform_iml_pca = iml_pca.fit_transform(X)
+                # ax_sol[1].set_title('Hermitan Eigen')
+                # ax_sol[1].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='darkorange', s=10, alpha=0.5)
+                #
+                # iml_pca = IML_PCA(n_components=n, name=path['name'], solver='svd')
+                # X_transform_iml_pca = iml_pca.fit_transform(X)
+                # ax_sol[2].set_title('SVD')
+                # ax_sol[2].scatter(X_transform_iml_pca[:, 0], X_transform_iml_pca[:, 1], c='magenta', s=10, alpha=0.5)
+                #
+                # f_sol.savefig(os.path.join(params.output_path, f'pca_solvers_{path["name"]}.png'))
+                # plt.close(f_sol)
 
         plt.plot(n_components, explained_variances)
         plt.xticks(n_components)

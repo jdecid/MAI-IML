@@ -104,26 +104,26 @@ class PCA:
             Returns the instance itself.
         """
         self.mean_ = np.mean(X, axis=0)
-
         phi_mat = (X - self.mean_).T
-
-        self.cov_mat_ = phi_mat @ phi_mat.T
+        self.cov_mat_ = np.cov(phi_mat)
 
         if self._solver == 'eig':
             # Using Eigenvalues and Eigenvectors
             eig_values, eig_vectors = np.linalg.eig(self.cov_mat_)
-            eig_values, eig_vectors = PCA.__sort_eigen(eig_values, eig_vectors)
+            eig_values, eig_vectors = PCA.__sort_eigen(eig_values.real, eig_vectors.real)
         elif self._solver == 'hermitan':
             # Using Eigenvalues and Eigenvectors assuming Hermitan matrix
             eig_values, eig_vectors = np.linalg.eigh(self.cov_mat_)
-            eig_values, eig_vectors = PCA.__sort_eigen(eig_values, eig_vectors)
+            eig_values, eig_vectors = PCA.__sort_eigen(eig_values.real, eig_vectors.real)
         else:
+            # TODO: Check
             # Using Singular Value Decomposition
             _, eig_values, eig_vectors = np.linalg.svd(self.cov_mat_, compute_uv=True)
 
         # PCA.__display_eig(singular_values, singular_vectors)
 
-        self.explained_variance_ = (eig_values ** 2) / (X.shape[0] - 1)
+        # self.explained_variance_ = (eig_values ** 2) / (X.shape[0] - 1)
+        self.explained_variance_ = eig_values
         self.explained_variance_ratio_ = self.explained_variance_ / self.explained_variance_.sum()
 
         if type(self._n_components) == int:
