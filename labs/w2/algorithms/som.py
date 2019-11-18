@@ -21,7 +21,8 @@ class SOM(SOFM):
 
     @staticmethod
     def get_predicted_clusters(C):
-        return np.where(C == 1)[0]
+        # return np.where(C == 1)[0]
+        return np.argmax(C, axis=1)
 
     def plot_heatmap(self, X: np.ndarray, Y: np.ndarray):
         heatmap = self.__compute_heatmap()

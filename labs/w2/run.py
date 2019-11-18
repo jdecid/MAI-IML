@@ -17,6 +17,7 @@ from algorithms.pca import PCA as IML_PCA
 from algorithms.som import SOM
 from preprocessing import adult, connect_4, segment
 from utils.evaluate import evaluate_supervised, evaluate_unsupervised
+from utils.plotting import get_colors
 
 
 def run_pca(paths: List[Dict[str, str]], min_explained_variance: float, params):
@@ -155,13 +156,13 @@ def run_pca(paths: List[Dict[str, str]], min_explained_variance: float, params):
 def run_som(paths: List[Dict[str, str]], params):
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X'])).values
-        Y = pd.read_csv(os.path.join('datasets', path['Y']))
+        Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
         Y = LabelEncoder().fit_transform(Y)
 
         som = SOM(
-            n_inputs=18,
-            features_grid=(10, 10),
-            # n_outputs=20,
+            n_inputs=int(X.shape[1]),
+            # features_grid=(10, 10),
+            n_outputs=int(max(Y) + 1),
             learning_radius=5,
             reduce_radius_after=50,
             step=0.5,
@@ -170,13 +171,31 @@ def run_som(paths: List[Dict[str, str]], params):
             verbose=True
         )
 
-        predictions = som.fit_predict(X, epochs=20)
+        predictions = som.fit_predict(X, epochs=800)
         som_clusters = som.get_predicted_clusters(predictions)
-        true_results = evaluate_supervised(Y, som_clusters)
+        true_results_som = evaluate_supervised(Y, som_clusters)
 
         kp_clusters_path = os.path.join('datasets', 'predictions', f'prediction_{path["name"]}_K{path["k"]}.pkl')
         kp_clusters = pickle.load(open(kp_clusters_path, mode='rb'))
+        true_results_kp = evaluate_supervised(Y, kp_clusters)
+
         method_results = evaluate_supervised(kp_clusters, som_clusters)
+
+        with open(os.path.join(params.output_path, 'results.md'), 'a') as f:
+            f.write('\n## Evaluate SOM vs True Labels\n')
+            f.write(eval_dict_to_table(true_results_som))
+
+            f.write('\n## Evaluate K-Prototypes vs True Labels\n')
+            f.write(eval_dict_to_table(true_results_kp))
+
+            f.write('\n## Evaluate SOM vs K-Prototypes\n')
+            f.write(eval_dict_to_table(method_results))
+
+        colors = get_colors(int(max(Y) + 1))
+        plt.scatter(*X[:, [0, 1]].T, s=100, alpha=1)
+        cluster_centers = plt.scatter(*som.weight[:, [0, 1]].T, s=300, c=colors[0])
+        plt.legend([cluster_centers], ['Cluster center'], loc='upper left')
+        plt.show()
 
         # heatmap = som.plot_heatmap(X, Y)
         # plt.imshow(heatmap, cmap='Greys_r', interpolation='nearest')
@@ -286,8 +305,8 @@ def main(params):
         run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
     if params.algorithm == 'SOM' or params.algorithm is None:
         run_som(paths=num_paths, params=params)
-        if params.algorithm is not None:
-            run_kprototypes(paths=mix_paths, params=params)
+        # if params.algorithm is not None:
+        #    run_kprototypes(paths=mix_paths, params=params)
 
 
 if __name__ == '__main__':
