@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import pickle
 from datetime import datetime
 from typing import List, Dict
 
@@ -18,7 +19,7 @@ from preprocessing import adult, connect_4, segment
 from utils.evaluate import evaluate_supervised, evaluate_unsupervised
 
 
-def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
+def run_pca(paths: List[Dict[str, str]], min_explained_variance: float, params):
     X_transforms = {}  # Dict to store transformations from our PCA implementation, in order to apply K-Prototypes
 
     for path in paths:
@@ -36,9 +37,8 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
         plt.savefig(os.path.join(params.output_path, f'dataset_{path["name"]}.png'))
         plt.close(f)
 
-        for n in n_components:
-            logging.info(f'PCA with N = {n_components}')
-
+        n = 1
+        while True:
             # Our PCA
             iml_pca = IML_PCA(n_components=n, name=path['name'])
             X_transform_iml_pca = iml_pca.fit_transform(X)
@@ -49,18 +49,15 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
             plt.savefig(os.path.join(params.output_path, f'cov_matrix_{path["name"]}.png'))
             plt.close(cov_f)
 
-            explained_variances.append(100 * np.cumsum(iml_pca.explained_variance_ratio_)[-1])
-            print(np.cumsum(iml_pca.explained_variance_ratio_))
+            explained_variances.append(np.cumsum(iml_pca.explained_variance_ratio_)[-1])
 
             # PCA
             pca = PCA(n_components=n)
             X_transform_pca = pca.fit_transform(X)
-            print(np.cumsum(pca.explained_variance_ratio_))
 
             # Incremental PCA
             ipca = IncrementalPCA(n_components=n)
             X_transform_ipca = ipca.fit_transform(X)
-            print(np.cumsum(ipca.explained_variance_ratio_))
 
             if n == 2:
                 # Plot comparative with SKLearn methods
@@ -99,29 +96,57 @@ def run_pca(paths: List[Dict[str, str]], n_components: List[int], params):
                 f_sol.savefig(os.path.join(params.output_path, f'pca_solvers_{path["name"]}.png'))
                 plt.close(f_sol)
 
-        # Plot evolution of accuracies for different N
-        plt.plot(n_components, explained_variances)
-        plt.xticks(n_components)
+            print(f'PCA with {n} components\n\tExplained Variance:'
+                  f' {explained_variances[-1]:.6f} |'
+                  f' {np.cumsum(pca.explained_variance_ratio_)[-1]:.6f} |'
+                  f' {np.cumsum(ipca.explained_variance_ratio_)[-1]:.6f}')
+
+            if explained_variances[-1] >= min_explained_variance:
+                break
+            else:
+                n += 1
+
+        explained_variances = np.array(explained_variances)
+        n_to_plot = [np.where(explained_variances > 0.90)[0][0] + 1,
+                     np.where(explained_variances > 0.95)[0][0] + 1,
+                     np.where(explained_variances > 0.99)[0][0] + 1]
+
+        # Plot evolution of expected variances for different N
+        f_evo = plt.figure(figsize=(15, 5), dpi=200)
+        plt.tight_layout()
+
         plt.axhline(90, ls='--', c='red')
         plt.axhline(95, ls='--', c='red')
         plt.axhline(99, ls='--', c='red')
 
-        plt.title(f'Evolution of explained variance with {path["name"]} dataset')
-        plt.xlabel('# components')
-        plt.ylabel('% explained variance')
+        plt.axvline(n_to_plot[0], ls='--', c='red')
+        plt.axvline(n_to_plot[1], ls='--', c='red')
+        plt.axvline(n_to_plot[2], ls='--', c='red')
 
-        plt.savefig(os.path.join(params.output_path, f'pca_evolution_{path["name"]}.png'))
-        plt.close()
+        x = list(range(1, n + 1))
+        plt.plot(x, explained_variances * 100)
+        plt.xticks(x)
+
+        plt.title(f'Evolution of PCA Explained Variance for {path["name"]}', fontsize=18)
+        plt.xlabel('# components', fontsize=16)
+        plt.ylabel('% explained variance', fontsize=16)
+
+        plt.savefig(os.path.join(params.output_path, f'pca_evolution_{path["name"]}.png'), bbox_inches='tight')
+        plt.close(f_evo)
 
         # Plot reconstructed datasets with 2 components, explained variance of >90% and >99%.
+        n_to_plot[0] = 2
+
         f_rec, ax_rec = plt.subplots(1, 3, figsize=(15, 5), dpi=200)
         plt.tight_layout()
-        for idx, n in enumerate([2, 7, 10]):
+
+        for idx, n in enumerate(n_to_plot):
             ax_rec[idx].scatter(X_reconstructed[n][:, 0], X_reconstructed[n][:, 1])
-            ax_rec[idx].set_title(f'Reconstructed {path["name"]} from {n} components')
-            ax_rec[idx].set_xlabel('Feature #0')
-            ax_rec[idx].set_ylabel('Feature #1')
-        plt.savefig(os.path.join(params.output_path, f'pca_reconstructed_{path["name"]}.png'))
+            ax_rec[idx].set_title(f'Reconstruction from {n} components', fontsize=18)
+            ax_rec[idx].set_xlabel('Feature #0', fontsize=16)
+            ax_rec[idx].set_ylabel('Feature #1', fontsize=16)
+
+        plt.savefig(os.path.join(params.output_path, f'pca_reconstructed_{path["name"]}.png'), bbox_inches='tight')
         plt.close(f_rec)
 
     return X_transforms
@@ -145,14 +170,20 @@ def run_som(paths: List[Dict[str, str]], params):
             verbose=True
         )
 
-        som.train(X, epochs=500)
-        heatmap = som.plot_heatmap(X, Y)
+        predictions = som.fit_predict(X, epochs=20)
+        som_clusters = som.get_predicted_clusters(predictions)
+        true_results = evaluate_supervised(Y, som_clusters)
 
-        plt.imshow(heatmap, cmap='Greys_r', interpolation='nearest')
-        plt.title(f'SOM Heatmap for {path["name"]} dataset')
-        plt.axis('off')
-        plt.colorbar()
-        plt.savefig(os.path.join(params.output_path, f'som_{path["name"]}.png'))
+        kp_clusters_path = os.path.join('datasets', 'predictions', f'prediction_{path["name"]}_K{path["k"]}.pkl')
+        kp_clusters = pickle.load(open(kp_clusters_path, mode='rb'))
+        method_results = evaluate_supervised(kp_clusters, som_clusters)
+
+        # heatmap = som.plot_heatmap(X, Y)
+        # plt.imshow(heatmap, cmap='Greys_r', interpolation='nearest')
+        # plt.title(f'SOM Heatmap for {path["name"]} dataset')
+        # plt.axis('off')
+        # plt.colorbar()
+        # plt.savefig(os.path.join(params.output_path, f'som_{path["name"]}.png'))
 
 
 def get_cat_idx(array2d):
@@ -226,32 +257,32 @@ def main(params):
     if params.dataset == 'adult' or params.dataset is None:
         file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = adult.preprocess()
         datasets += [
-            {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y, 'type': 'num'},
-            {'name': 'adult', 'X': file_adult_cat, 'Y': file_adult_y, 'type': 'cat'},
-            {'name': 'adult', 'X': file_adult_mix, 'Y': file_adult_y, 'type': 'mix'},
+            {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y, 'type': 'num', 'k': 2},
+            {'name': 'adult', 'X': file_adult_cat, 'Y': file_adult_y, 'type': 'cat', 'k': 2},
+            {'name': 'adult', 'X': file_adult_mix, 'Y': file_adult_y, 'type': 'mix', 'k': 2},
         ]
 
     if params.dataset == 'connect-4' or params.dataset is None:
         file_connect_4_cat, file_connect_4_num, file_connect_4_y = connect_4.preprocess()
         datasets += [
-            {'name': 'connect-4', 'X': file_connect_4_num, 'Y': file_connect_4_y, 'type': 'num'},
-            {'name': 'connect-4', 'X': file_connect_4_cat, 'Y': file_connect_4_y, 'type': 'cat'},
-            {'name': 'connect-4', 'X': file_connect_4_cat, 'Y': file_connect_4_y, 'type': 'mix'}
+            {'name': 'connect-4', 'X': file_connect_4_num, 'Y': file_connect_4_y, 'type': 'num', 'k': 3},
+            {'name': 'connect-4', 'X': file_connect_4_cat, 'Y': file_connect_4_y, 'type': 'cat', 'k': 3},
+            {'name': 'connect-4', 'X': file_connect_4_cat, 'Y': file_connect_4_y, 'type': 'mix', 'k': 3}
         ]
 
     if params.dataset == 'segment' or params.dataset is None:
         file_segment_num, file_segment_cat, file_segment_y = segment.preprocess()
         datasets += [
-            {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y, 'type': 'num'},
-            {'name': 'segment', 'X': file_segment_cat, 'Y': file_segment_y, 'type': 'cat'},
-            {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y, 'type': 'mix'},
+            {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y, 'type': 'num', 'k': 7},
+            {'name': 'segment', 'X': file_segment_cat, 'Y': file_segment_y, 'type': 'cat', 'k': 7},
+            {'name': 'segment', 'X': file_segment_num, 'Y': file_segment_y, 'type': 'mix', 'k': 7},
         ]
 
     num_paths = list(filter(lambda d: d['type'] == 'num', datasets))
     mix_paths = list(filter(lambda d: d['type'] == 'mix', datasets))
 
     if params.algorithm == 'PCA' or params.algorithm is None:
-        X_transforms = run_pca(paths=num_paths, n_components=list(range(1, 11)), params=params)
+        X_transforms = run_pca(paths=num_paths, min_explained_variance=0.99, params=params)
         run_kprototypes(paths=mix_paths, params=params, transformed_data=X_transforms)
     if params.algorithm == 'SOM' or params.algorithm is None:
         run_som(paths=num_paths, params=params)
