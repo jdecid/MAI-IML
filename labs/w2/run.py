@@ -157,13 +157,13 @@ def run_som(paths: List[Dict[str, str]], params):
     for path in paths:
         X = pd.read_csv(os.path.join('datasets', path['X'])).values
         Y = pd.read_csv(os.path.join('datasets', path['Y']), header=None)
-        Y = LabelEncoder().fit_transform(Y)
+        Y = LabelEncoder().fit_transform(Y).ravel()
 
         som = SOM(
             n_inputs=int(X.shape[1]),
             # features_grid=(10, 10),
             n_outputs=int(max(Y) + 1),
-            learning_radius=5,
+            learning_radius=2,
             reduce_radius_after=50,
             step=0.5,
             std=1,
@@ -191,11 +191,11 @@ def run_som(paths: List[Dict[str, str]], params):
             f.write('\n## Evaluate SOM vs K-Prototypes\n')
             f.write(eval_dict_to_table(method_results))
 
-        colors = get_colors(int(max(Y) + 1))
-        plt.scatter(*X[:, [0, 1]].T, s=100, alpha=1)
-        cluster_centers = plt.scatter(*som.weight[:, [0, 1]].T, s=300, c=colors[0])
-        plt.legend([cluster_centers], ['Cluster center'], loc='upper left')
-        plt.show()
+        # colors = get_colors(int(max(Y) + 1))
+        # plt.scatter(*X[:, [0, 1]].T, s=100, alpha=1)
+        # cluster_centers = plt.scatter(*som.weight[:, [0, 1]].T, s=300, c=colors[0])
+        # plt.legend([cluster_centers], ['Cluster center'], loc='upper left')
+        # plt.show()
 
         # heatmap = som.plot_heatmap(X, Y)
         # plt.imshow(heatmap, cmap='Greys_r', interpolation='nearest')

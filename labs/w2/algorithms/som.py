@@ -1,7 +1,7 @@
 from itertools import product
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from neupy.algorithms import SOFM
 
 from utils.plotting import get_colors
