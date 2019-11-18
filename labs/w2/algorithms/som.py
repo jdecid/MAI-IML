@@ -8,13 +8,6 @@ from utils.plotting import get_colors
 
 
 class SOM(SOFM):
-    """Self Organizing Map (SOM) wrapper.
-
-    Parameters
-    ----------
-
-    """
-
     def fit_predict(self, X: np.ndarray, epochs=100):
         self.train(X, epochs=epochs)
         return self.predict(X)
