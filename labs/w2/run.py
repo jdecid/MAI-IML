@@ -17,7 +17,6 @@ from algorithms.pca import PCA as IML_PCA
 from algorithms.som import SOM
 from preprocessing import adult, connect_4, segment
 from utils.evaluate import evaluate_supervised, evaluate_unsupervised
-from utils.plotting import get_colors
 
 
 def run_pca(paths: List[Dict[str, str]], min_explained_variance: float, params):
@@ -32,10 +31,10 @@ def run_pca(paths: List[Dict[str, str]], min_explained_variance: float, params):
 
         f = plt.figure()
         plt.scatter(X[:, 0], X[:, 1])
-        plt.title(f'{path["name"].capitalize()} dataset over its two first features')
-        plt.xlabel('Feature #0')
-        plt.ylabel('Feature #1')
-        plt.savefig(os.path.join(params.output_path, f'dataset_{path["name"]}.png'))
+        plt.title(f'{path["name"].capitalize()} dataset', fontsize=18)
+        plt.xlabel('Feature #0', fontsize=16)
+        plt.ylabel('Feature #1', fontsize=16)
+        plt.savefig(os.path.join(params.output_path, f'dataset_{path["name"]}.png'), bbox_inches='tight')
         plt.close(f)
 
         n = 1
@@ -47,7 +46,7 @@ def run_pca(paths: List[Dict[str, str]], min_explained_variance: float, params):
             X_reconstructed[n] = iml_pca.inverse_transform(X_transform_iml_pca)
 
             cov_f, cov_matrix = iml_pca.get_cov_matrix(dataset_name=path['name'])
-            plt.savefig(os.path.join(params.output_path, f'cov_matrix_{path["name"]}.png'))
+            plt.savefig(os.path.join(params.output_path, f'cov_matrix_{path["name"]}.png'), bbox_inches='tight')
             plt.close(cov_f)
 
             explained_variances.append(np.cumsum(iml_pca.explained_variance_ratio_)[-1])
@@ -136,7 +135,9 @@ def run_pca(paths: List[Dict[str, str]], min_explained_variance: float, params):
         plt.close(f_evo)
 
         # Plot reconstructed datasets with 2 components, explained variance of >90% and >99%.
-        n_to_plot[0] = 2
+        n_to_plot = [2,
+                     np.where(explained_variances > 0.90)[0][0] + 1,
+                     np.where(explained_variances > 0.99)[0][0] + 1]
 
         f_rec, ax_rec = plt.subplots(1, 3, figsize=(15, 5), dpi=200)
         plt.tight_layout()

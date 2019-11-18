@@ -217,7 +217,7 @@ class PCA:
         """
         f, ax = plt.subplots(1, 1)
         im = ax.matshow(self.cov_mat_, cmap=plt.get_cmap('coolwarm'))
-        ax.set_title(f'Covariance matrix for {dataset_name} dataset', y=1.08)
+        ax.set_title(f'Covariance matrix for {dataset_name} dataset', y=1.08, fontsize=18)
         plt.colorbar(im, ax=ax)
         return f, im
 
