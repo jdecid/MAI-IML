@@ -17,9 +17,3 @@ Models
 
 .. automodule:: algorithms.pca
     :members:
-
-.. automodule:: algorithms.kmeans
-    :members:
-
-.. automodule:: algorithms.kprototypes
-    :members:

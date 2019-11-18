@@ -48,7 +48,7 @@
           
             <a href="#" class="icon icon-home"> Principal Component Analysis and Self-Organizing Maps Exercise | MAI-IML
             
-            <img src="_static/stsci_pri_combo_mark_white.png" class="logo" />
+            <img src="_static/ub.png" class="logo" />
           </a>
 
           
@@ -159,7 +159,7 @@
 <span id="models"></span><h1>Models<a class="headerlink" href="#module-algorithms.pca" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="algorithms.pca.PCA">
-<em class="property">class </em><code class="sig-prename descclassname">algorithms.pca.</code><code class="sig-name descname">PCA</code><span class="sig-paren">(</span><em class="sig-param">n_components: Union[int, float, None]</em><span class="sig-paren">)</span><a class="headerlink" href="#algorithms.pca.PCA" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">algorithms.pca.</code><code class="sig-name descname">PCA</code><span class="sig-paren">(</span><em class="sig-param">n_components: Union[int, float, None], name: str, solver='eig'</em><span class="sig-paren">)</span><a class="headerlink" href="#algorithms.pca.PCA" title="Permalink to this definition">¶</a></dt>
 <dd><p>Principal component analysis (PCA)</p>
 <p>Algorithm to transform multi-dimensional observations into a set of values of linearly uncorrelated variables called
 principal components. The first principal component has the largest possible variance
@@ -169,7 +169,8 @@ The resulting vectors (each being a linear combination of the variables and cont
 are an uncorrelated orthogonal basis set. PCA is sensitive to the relative scaling of the original variables.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>n_components</strong> (<em>int, float, None</em>) – Number of components to keep.
+<dd class="field-odd"><ul>
+<li><p><strong>n_components</strong> (<em>int, float, None</em>) – Number of components to keep.
 - If parameter is an int <cite>n_components</cite> &gt;= 1, it is the number of selected components.
 - If parameter is a float 0 &lt; <cite>n_components</cite> &lt; 1, it selects the number of components that explain at least</p>
 <blockquote>
@@ -178,15 +179,38 @@ are an uncorrelated orthogonal basis set. PCA is sensitive to the relative scali
 <ul class="simple">
 <li><p>If <cite>n_components</cite> is None, all components are kept: n_components == n_features.</p></li>
 </ul>
+</li>
+<li><p><strong>name</strong> (<em>str</em>) – Identifiable name of the dataset used for plotting and printing purposes.</p></li>
+<li><p><strong>solver</strong> (<em>str</em>) – Solving method for extracting eigenvalues. It may take three different values:
+- <cite>eig</cite>: Uses <cite>np.linalg.eig</cite> to compute the eigenvalues and right eigenvectors of the covariance matrix.
+- <cite>hermitan</cite>: Uses <cite>np.linalg.eigh</cite> which assumes the matrix is Hermitan (i.e. symmetric)</p>
+<blockquote>
+<div><p>By default takes only the lower triangular part of the matrix and assumes that the upper triangular part
+is defined by the symmetry of the matrix. This one is faster to compute.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt><cite>svd</cite>: Uses <cite>np.linalg.svd</cite> which is exactly the same for Hermitan matrices. However it’s faster and</dt><dd><p>numerically more stable than calculate the eigenvalues and eigenvectors as it uses a Divide and Conquer
+approaches instead of a plain QR factorization, which are less stable.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt class="field-even">Variables</dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>components_</strong> (np.array, shape (<cite>n_components_</cite>, d_features)) – Principal axes in feature space of directions with maximum variance in the data.
-The components are sorted by <cite>explained_variance_</cite>.</p></li>
-<li><p><strong>explained_variance_</strong> (<em>np.array</em>) – </p></li>
-<li><p><strong>explained_variance_ratio_</strong> (np.array, shape (<cite>n_components_</cite>,)) – </p></li>
-<li><p><strong>singular_values_</strong> (np.array, shape(<cite>n_components</cite>,)) – </p></li>
-<li><p><strong>mean_</strong> (<em>np.array</em><em>, </em><em>shape</em><em>(</em><em>d_features</em><em>,</em><em>)</em>) – Mean vector for all features, estimated empirically from the data.</p></li>
+<li><p><strong>components_</strong> (np.array, shape (<cite>n_components</cite>, <cite>d_features</cite>)) – Principal axes in feature space of directions with maximum variance in the data.
+The components are sorted from largest to smallest associated eigenvalue,
+which is equivalent to sort descending by explained variance.</p></li>
+<li><p><strong>cov_mat_</strong> (np.array, shape (<cite>d_features</cite>, <cite>d_features</cite>)) – Covariance matrix of the training data.</p></li>
+<li><p><strong>explained_variance_</strong> (<em>np.array</em>) – The amount of variance explained by each of the selected <cite>n_components</cite>.
+Equivalent to n_components largest eigenvalues of <cite>cov_mat</cite>.</p></li>
+<li><p><strong>explained_variance_ratio_</strong> (np.array, shape (<cite>n_components</cite>,)) – Percentage of the amount of variance explained by each of the selected <cite>n_components</cite>.
+If all the components are stored, this sum of all ratios is equal to 1.0.</p></li>
+<li><p><strong>eigen_values_</strong> (np.array, shape(<cite>n_components</cite>,)) – Singular values associated to each of the selected <cite>n_components</cite> (eigenvectors).</p></li>
+<li><p><strong>mean_</strong> (np.array, shape(<cite>d_features</cite>,)) – Mean vector for all features, estimated empirically from the training data.</p></li>
 <li><p><strong>n_components_</strong> (<em>int</em>) – Number of components selected to use:
 - Equivalent to parameter <cite>n_components</cite> if it is an int.
 - Estimated from the input data if it is a float.
@@ -233,6 +257,40 @@ The components are sorted by <cite>explained_variance_</cite>.</p></li>
 </dd></dl>
 
 <dl class="method">
+<dt id="algorithms.pca.PCA.get_cov_matrix">
+<code class="sig-name descname">get_cov_matrix</code><span class="sig-paren">(</span><em class="sig-param">dataset_name: str</em><span class="sig-paren">)</span> &#x2192; Tuple[matplotlib.figure.Figure, matplotlib.axes._axes.Axes]<a class="headerlink" href="#algorithms.pca.PCA.get_cov_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create covariance matrix Matplotlib figure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataset_name</strong> (<em>str</em>) – Dataset name used in the figure title.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>Cov_figure</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>plt.Axes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="algorithms.pca.PCA.inverse_transform">
+<code class="sig-name descname">inverse_transform</code><span class="sig-paren">(</span><em class="sig-param">X_transformed: numpy.ndarray</em><span class="sig-paren">)</span> &#x2192; numpy.ndarray<a class="headerlink" href="#algorithms.pca.PCA.inverse_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstruct X_original from X which would be its transformation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X_transformed</strong> (np.ndarray, shape (<cite>n_shape</cite>, <cite>n_components</cite>)) – Transformed X from original data obtained with <cite>transform</cite> or <cite>fit_transform</cite>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>X_original</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray, shape (n_samples, d_features)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="algorithms.pca.PCA.transform">
 <code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param">X: numpy.ndarray</em><span class="sig-paren">)</span> &#x2192; numpy.ndarray<a class="headerlink" href="#algorithms.pca.PCA.transform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply the dimensionality reduction on X.</p>
@@ -247,111 +305,6 @@ The components are sorted by <cite>explained_variance_</cite>.</p></li>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray, shape (n_samples, self.n_components)</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<span class="target" id="module-algorithms.kmeans"></span><dl class="class">
-<dt id="algorithms.kmeans.KMeans">
-<em class="property">class </em><code class="sig-prename descclassname">algorithms.kmeans.</code><code class="sig-name descname">KMeans</code><span class="sig-paren">(</span><em class="sig-param">K: int</em>, <em class="sig-param">name: str</em>, <em class="sig-param">max_it=1000</em>, <em class="sig-param">metric='euclidean'</em>, <em class="sig-param">vis_dims=0</em>, <em class="sig-param">fig_save_path: str = None</em>, <em class="sig-param">seed=1</em><span class="sig-paren">)</span><a class="headerlink" href="#algorithms.kmeans.KMeans" title="Permalink to this definition">¶</a></dt>
-<dd><p>K-Means Clustering Algorithm</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>K</strong> (<em>int</em>) – Number of clusters.</p></li>
-<li><p><strong>name</strong> (<em>str</em>) – Dataset name. Used for information and plotting proposes.</p></li>
-<li><p><strong>max_it</strong> (<em>int</em>) – Maximum number of iterations if convergence isn’t reached.</p></li>
-<li><p><strong>metric</strong> (<em>str</em>) – Distance function.
-Option to use euclidean, cityblock (Manhattan), or cosine distance.</p></li>
-<li><p><strong>vis_dims</strong> (<em>int</em>) – Visualization dimensions:
-- 0 if no visualization should be performed.
-- 2 for 2D plotting.
-- 3 for 3D plotting (doesn’t allow interactive visualization).</p></li>
-<li><p><strong>fig_save_path</strong> (<em>str</em>) – Output path to save all generated figures.
-If None, those would be shown instead of being saved.</p></li>
-<li><p><strong>seed</strong> (<em>int</em>) – Fix behaviour of random NumPy functions and allow reproducibility.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt id="algorithms.kmeans.KMeans.fit">
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">X: numpy.ndarray</em><span class="sig-paren">)</span> &#x2192; algorithms.kmeans.KMeans<a class="headerlink" href="#algorithms.kmeans.KMeans.fit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fit the model with X.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where:
-- n_samples is the number of rows (samples).
-- d_features is the number of columns (features).</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>KMeans object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="algorithms.kmeans.KMeans.fit_predict">
-<code class="sig-name descname">fit_predict</code><span class="sig-paren">(</span><em class="sig-param">X: numpy.ndarray</em><span class="sig-paren">)</span> &#x2192; List[int]<a class="headerlink" href="#algorithms.kmeans.KMeans.fit_predict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fit the model with X and apply clustering on X.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where:
-- n_samples is the number of rows (samples).
-- d_features is the number of columns (features).</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>X_clusters</strong></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.ndarray, shape (n_samples,)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="algorithms.kmeans.KMeans.predict">
-<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">X: numpy.ndarray</em><span class="sig-paren">)</span> &#x2192; Union[List[int], Tuple[List[int], numpy.ndarray]]<a class="headerlink" href="#algorithms.kmeans.KMeans.predict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply clustering to X.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Test data where:
-- n_samples is the number of rows (samples).
-- d_features is the number of columns (features).</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>X_clusters</strong></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.ndarray, shape (n_samples,)</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<span class="target" id="module-algorithms.kprototypes"></span><dl class="class">
-<dt id="algorithms.kprototypes.KPrototypes">
-<em class="property">class </em><code class="sig-prename descclassname">algorithms.kprototypes.</code><code class="sig-name descname">KPrototypes</code><span class="sig-paren">(</span><em class="sig-param">cat_idx</em>, <em class="sig-param">gamma=1</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#algorithms.kprototypes.KPrototypes" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="algorithms.kprototypes.KPrototypes.fit">
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">X: numpy.ndarray</em>, <em class="sig-param">max_it=20</em><span class="sig-paren">)</span><a class="headerlink" href="#algorithms.kprototypes.KPrototypes.fit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fit the model with X.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray, shape (n_samples, d_features)</em>) – Training data where:
-- n_samples is the number of rows (samples).
-- d_features is the number of columns (features).</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>KMeans object</p>
 </dd>
 </dl>
 </dd></dl>
