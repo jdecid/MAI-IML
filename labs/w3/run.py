@@ -1,13 +1,13 @@
 import argparse
 import json
 import multiprocessing
-from multiprocessing.pool import ThreadPool
 import os
+from multiprocessing.pool import ThreadPool
 from threading import Lock
 from time import time
 from typing import List
 
-import sys
+import numpy as np
 from tqdm import tqdm
 
 from algorithms.KIBLAlgorithm import KIBLAlgorithm, VOTING_POLICIES, RETENTION_POLICIES
@@ -39,7 +39,9 @@ def read_data(name: str) -> List[dict]:
     return folds
 
 
-def run_knn_fold(fold, k, r, i=None, lock=None):
+def run_knn_fold(fold, k, r, seed, i=None, lock=None):
+    np.random.seed(seed)
+
     time_start = time()
 
     alg = KIBLAlgorithm(K=k, r=r)
@@ -97,7 +99,7 @@ def run_kIBL(folds, name, seed, par):
 
                         fold_results = {}
                         for i, fold in enumerate(folds):
-                            pool.apply_async(run_knn_fold, args=(fold, k, r, i, lock),
+                            pool.apply_async(run_knn_fold, args=(fold, k, r, seed, i, lock),
                                              callback=lambda x: fold_results.update({x[0]: x[1]}))
 
                         pool.close()
@@ -105,7 +107,7 @@ def run_kIBL(folds, name, seed, par):
 
                         fold_results = [fold_results[f] for f in range(len(folds))]
                     else:
-                        fold_results = list(map(lambda x: run_knn_fold(x[1], k, r, x[0]), enumerate(folds)))
+                        fold_results = list(map(lambda x: run_knn_fold(x[1], k, r, seed, x[0]), enumerate(folds)))
 
                     results.append({
                         'k': k,
