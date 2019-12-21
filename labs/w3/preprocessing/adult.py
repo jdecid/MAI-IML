@@ -13,7 +13,6 @@ def preprocess(train_dataset, validation_dataset):
 
     # TODO: Remove sample
     df_train = pd.DataFrame(train_data)
-    df_train = df_train.sample(n=5000, replace=False, random_state=1).reset_index(drop=True)
 
     df_val = pd.DataFrame(val_data)
 
