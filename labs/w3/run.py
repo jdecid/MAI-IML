@@ -16,7 +16,7 @@ from preprocessing.hypothyroid import preprocess as preprocess_hypothyroid
 from preprocessing.pen_based import preprocess as preprocess_penn
 from utils.dataset import read_dataset
 
-from scipy.stats import wilcoxon
+from scipy.stats import wilcoxon, ttest_ind
 
 OUTPUT_PATH = 'output'
 
@@ -124,19 +124,68 @@ def run_kIBL(folds, name, seed, par):
         f.write(results_json)
 
 
-def compute_wilcoxon(sample1, sample2):
+def compute_stat_test(sample1, sample2, test):
+    assert test in ['anova', 'wilcoxon', 'ttest']
+    if test == 'anova':
+        raise NotImplementedError
+    elif test == 'wilcoxon':
+        test_func = wilcoxon
+    else:
+        test_func = ttest_ind
     try:
-        stat, p = wilcoxon(sample1, sample2)
+        stat, p = test_func(sample1, sample2)
     except ValueError:
         stat, p = 0, 1
     return {'stat': stat, 'p': p}
 
 
-def run_stat_select_kIBL(kIBL_json_path, name):
+def eval_stat_test(mat, results, test, alpha=0.05):
+    select_mat = np.zeros(mat.shape[:-1])
+    assert test in ['anova', 'wilcoxon', 'ttest']
+    if test == 'anova':
+        raise NotImplementedError()
+    elif test == 'wilcoxon':
+        for i in range(mat.shape[0]):
+            for j in range(mat.shape[1]):
+                statistic = mat[i][j][0]
+                p_value = mat[i][j][1]
+                if p_value < alpha:  # significant
+                    if statistic > 0:  # second is better
+                        mean_acc1 = np.mean(results[i]['results']['accuracy'])
+                        mean_acc2 = np.mean(results[j]['results']['accuracy'])
+                        if mean_acc1 > mean_acc2:  # first is better
+                            select_mat[i][j] = 1
+                        elif mean_acc1 < mean_acc2:  # second is better
+                            select_mat[i][j] = 2
+                        else:  # tie
+                            select_mat[i][j] = 0
+                        select_mat[i][j] = 2
+                    else:  # tie
+                        select_mat[i][j] = 0
+                else:  # tie
+                    select_mat[i][j] = 0
+    else:
+        for i in range(mat.shape[0]):
+            for j in range(mat.shape[1]):
+                statistic = mat[i][j][0]
+                p_value = mat[i][j][1]
+                if p_value < alpha:  # significant
+                    if statistic < 0:  # second is better
+                        select_mat[i][j] = 2
+                    elif statistic > 0:  # first is better
+                        select_mat[i][j] = 1
+                    else:  # tie
+                        select_mat[i][j] = 0
+                else:  # tie
+                    select_mat[i][j] = 0
+    return select_mat
+
+
+def run_stat_select_kIBL(kIBL_json_path, name, test):
     results = json.loads(open(kIBL_json_path, 'r').read())
 
-    stats_accuracy = np.full(shape=(len(results), len(results)), fill_value=np.nan)
-    stats_time = np.full(shape=(len(results), len(results)), fill_value=np.nan)
+    stats_accuracy = np.full(shape=(len(results), len(results), 2), fill_value=np.nan)
+    stats_time = np.full(shape=(len(results), len(results), 2 ), fill_value=np.nan)
 
     for i, model1 in enumerate(results):
         for j, model2 in enumerate(results):
@@ -148,14 +197,17 @@ def run_stat_select_kIBL(kIBL_json_path, name):
             res1_time = list(map(lambda x: x['time'], model1['results']))
             res2_time = list(map(lambda x: x['time'], model2['results']))
 
-            stat_accuracy = compute_wilcoxon(res1_acc, res2_acc)
-            stat_time = compute_wilcoxon(res1_time, res2_time)
+            stat_accuracy = compute_stat_test(res1_acc, res2_acc, test)
+            stat_time = compute_stat_test(res1_time, res2_time, test)
 
-            stats_accuracy[i, j] = stat_accuracy['p']
-            stats_time[i, j] = stat_time['p']
+            stats_accuracy[i, j] = np.array([stat_accuracy['stat'], stat_accuracy['p']])
+            stats_time[i, j] = np.array([stat_accuracy['stat'], stat_time['p']])
 
     pickle.dump(stats_accuracy, open(os.path.join(OUTPUT_PATH, name + '_accuracy.pkl'), mode='wb'))
     pickle.dump(stats_time, open(os.path.join(OUTPUT_PATH, name + '_time.pkl'), mode='wb'))
+
+    select_mat_acc = eval_stat_test(stats_accuracy, results, test='ttest')
+    select_mat_acc = eval_stat_test(stats_time , results, test='ttest')
 
 
 def run_reduction_kIBL(folds, kIBL_params, seed):
