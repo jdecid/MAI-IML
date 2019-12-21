@@ -4,7 +4,7 @@ import numpy as np
 
 from algorithms.KIBLAlgorithm import KIBLAlgorithm
 
-REDUCTION_METHODS = ['CNN', 'SNN' 'ENN', 'RENN'] + [f'DROP{i}' for i in range(1, 6)]
+REDUCTION_METHODS = ['CNN', 'RENN', 'IB3'] + [f'DROP{i}' for i in range(1, 6)]
 
 
 def __cnn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -27,6 +27,25 @@ def __cnn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[n
             U.append(X[i, :])
             V.append(y[i])
             X = np.delete(X, i, axis=0)
+            continue
+        break
+
+    return np.stack(U), np.array(V)
+
+
+def __renn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    U = X.copy()
+    V = y.copy()
+
+    while True:
+        for i in range(U.shape[1]):
+            knn.fit(U, V)
+            pred = knn.k_neighbours(U[i, :], V[i])
+            if pred != y[i]:
+                break
+        else:
+            U = np.delete(U, i, axis=0)
+            V = np.delete(V, i, axis=0)
             continue
         break
 
