@@ -1,19 +1,19 @@
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder
 
-CATEGORICAL_FEATURES = ['workclass', 'education', 'marital-status', 'occupation',
-                        'relationship', 'race', 'sex', 'native-country']
+CATEGORICAL_FEATURES = ['sex', 'on_thyroxine', 'query_on_thyroxine', 'on_antithyroid_medication', 'sick', 'pregnant',
+                        'thyroid_surgery', 'I131_treatment', 'query_hypothyroid', 'query_hyperthyroid', 'lithium',
+                        'goitre', 'tumor', 'hypopituitary', 'psych', 'TSH_measured', 'T3_measured', 'TT4_measured',
+                        'T4U_measured', 'FTI_measured', 'TBG_measured', 'referral_source']
 
-NUMERICAL_FEATURES = ['age', 'fnlwgt', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
+NUMERICAL_FEATURES = ['age', 'TSH', 'T3', 'TT4', 'T4U', 'FTI']
 
 
 def preprocess(train_dataset, validation_dataset):
     train_data = train_dataset['data']
     val_data = validation_dataset['data']
 
-    # TODO: Remove sample
     df_train = pd.DataFrame(train_data)
-
     df_val = pd.DataFrame(val_data)
 
     df_train = df_train.applymap(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
@@ -21,14 +21,15 @@ def preprocess(train_dataset, validation_dataset):
 
     # Real Y labels
     le = LabelEncoder()
-    y_train = df_train['class'].copy()
+    y_train = df_train['Class'].copy()
     y_train = le.fit_transform(y_train)
 
-    y_val = df_val['class'].copy()
+    y_val = df_val['Class'].copy()
     y_val = le.transform(y_val)
 
-    df_train = df_train.drop(columns=['class'])
-    df_val = df_val.drop(columns=['class'])
+    # Drop class and NaN columns
+    df_train = df_train.drop(columns=['Class', 'TBG'])
+    df_val = df_val.drop(columns=['Class'])
 
     # Encode categorical values into numerical with OHE
     ohe = OneHotEncoder(handle_unknown='ignore', sparse=False)
@@ -38,6 +39,11 @@ def preprocess(train_dataset, validation_dataset):
     columns = ohe.get_feature_names(input_features=CATEGORICAL_FEATURES)
     X_categorical_train = pd.DataFrame(data=X_categorical_train, columns=columns)
     X_categorical_val = pd.DataFrame(data=X_categorical_val, columns=columns)
+
+    # Fill NA values
+    mean_values = df_train[NUMERICAL_FEATURES].mean(axis=0, skipna=True)
+    df_train = df_train[NUMERICAL_FEATURES].fillna(mean_values)
+    df_val = df_val[NUMERICAL_FEATURES].fillna(mean_values)
 
     # Scale numerical values
     sc = MinMaxScaler()

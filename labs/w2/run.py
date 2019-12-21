@@ -15,7 +15,7 @@ from sklearn.preprocessing import LabelEncoder
 from algorithms.kprototypes import KPrototypes
 from algorithms.pca import PCA as IML_PCA
 from algorithms.som import SOM
-from preprocessing import adult, connect_4, segment
+from preprocessing import hypothyroid, connect_4, segment
 from utils.evaluate import evaluate_supervised, evaluate_unsupervised
 
 
@@ -275,7 +275,7 @@ def run_kprototypes(paths: List[Dict[str, str]], params, transformed_data=None):
 def main(params):
     datasets = []
     if params.dataset == 'adult' or params.dataset is None:
-        file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = adult.preprocess()
+        file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = hypothyroid.preprocess()
         datasets += [
             {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y, 'type': 'num', 'k': 2},
             {'name': 'adult', 'X': file_adult_cat, 'Y': file_adult_y, 'type': 'cat', 'k': 2},

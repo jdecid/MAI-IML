@@ -11,7 +11,7 @@ import numpy as np
 from tqdm import tqdm
 
 from algorithms.KIBLAlgorithm import KIBLAlgorithm, VOTING_POLICIES, RETENTION_POLICIES
-from preprocessing.adult import preprocess as preprocess_adult
+from preprocessing.hypothyroid import preprocess as preprocess_hypothyroid
 from preprocessing.pen_based import preprocess as preprocess_penn
 from utils.dataset import read_dataset
 
@@ -23,7 +23,7 @@ R_VALUES = [1, 2, 3]
 
 def read_data(name: str) -> List[dict]:
     folds = []
-    preprocess = preprocess_adult if name == 'adult' else preprocess_penn
+    preprocess = preprocess_hypothyroid if name == 'hypothyroid' else preprocess_penn
 
     for i in tqdm(range(10), desc=f'Reading {name} dataset', ncols=150):
         train_data = read_dataset(name=f'{name}.fold.00000{i}.train', dataset_path=os.path.join('datasets', name))
@@ -93,7 +93,7 @@ def run_kIBL(folds, name, seed, par):
                           f'K={k}, r={r}, VP={voting_policy} and RP={retention_policy}' + ' ' * 100)
 
                     if par:
-                        cores = min(multiprocessing.cpu_count(), 10)
+                        cores = min(multiprocessing.cpu_count(), 5)
                         pool = ThreadPool(cores)
                         lock = Lock()
 
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     parser.add_argument('--algorithm', type=str, help='Select algorithm to run',
                         choices=['kIBL', 'stat', 'reduction'])
     parser.add_argument('--dataset', type=str, help='Select dataset to use',
-                        choices=['adult', 'pen-based'])
+                        choices=['hypothyroid', 'pen-based'])
     parser.add_argument('--results_kIBL', type=str, help='JSON with saved kIBL results')
     parser.add_argument('--par', type=str, help='Whether to take advantage of multiprocessing',
                         const=True, default=False, nargs='?')

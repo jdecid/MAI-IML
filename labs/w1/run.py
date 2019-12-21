@@ -12,7 +12,7 @@ from algorithms.fcm import FuzzyCMeans
 from algorithms.kmeans import KMeans
 from algorithms.kmodes import KModes
 from algorithms.kprototypes import KPrototypes
-from preprocessing import adult, connect_4, segment
+from preprocessing import hypothyroid, connect_4, segment
 from utils import evaluate
 from utils.optimize import optimize
 
@@ -243,7 +243,7 @@ def run_fcm(paths: List[Dict[str, str]], params):
 def main(params):
     datasets = []
     if params.dataset == 'adult' or params.dataset is None:
-        file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = adult.preprocess()
+        file_adult_num, file_adult_cat, file_adult_mix, file_adult_y = hypothyroid.preprocess()
         datasets += [
             {'name': 'adult', 'X': file_adult_num, 'Y': file_adult_y, 'type': 'num'},
             {'name': 'adult', 'X': file_adult_cat, 'Y': file_adult_y, 'type': 'cat'},
