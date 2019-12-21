@@ -1,9 +1,23 @@
 import argparse
+from typing import Tuple, List
 
 import numpy as np
 
 from algorithms.KIBLAlgorithm import KIBLAlgorithm
 from algorithms.reduction_KIBL_algorithm import reduction_KIBL_algorithm, REDUCTION_METHODS
+from utils.dataset import read_dataset
+
+
+def read_data(name: str) -> List[Tuple[np.ndarray, np.ndarray]]:
+    folds = []
+    for i in range(10):
+        train_data = read_dataset(name=f'{name}.fold.00000{i}.train')
+        validation_data = read_dataset(name=f'{name}.fold.00000{i}.test')
+
+        folds.append((train_data, validation_data))
+
+    return folds
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run all Clustering project for MAI-IML')
@@ -13,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--algorithm', type=str, help='Select algorithm to run',
                         choices=['agglomerative', 'kmeans', 'kmodes', 'kprototypes', 'fcm'])
     parser.add_argument('--dataset', type=str, help='Select dataset to use',
-                        choices=['adult', 'connect-4', 'segment'])
+                        choices=['adult'])
 
     args = parser.parse_args()
 
