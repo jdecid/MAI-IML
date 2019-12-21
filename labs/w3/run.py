@@ -140,8 +140,8 @@ def compute_stat_test(sample1, sample2, test):
 
 
 def eval_stat_test(mat, results, test, alpha=0.05):
-    select_mat = np.zeros(mat.shape[:-1])
     assert test in ['anova', 'wilcoxon', 'ttest']
+    select_mat = np.zeros(mat.shape[:-1])
     if test == 'anova':
         raise NotImplementedError()
     elif test == 'wilcoxon':
@@ -182,8 +182,10 @@ def eval_stat_test(mat, results, test, alpha=0.05):
 
 
 def run_stat_select_kIBL(kIBL_json_path, name, test):
+    assert test in ['anova', 'wilcoxon', 'ttest']
+    if test == 'anova':
+        raise NotImplementedError()
     results = json.loads(open(kIBL_json_path, 'r').read())
-
     stats_accuracy = np.full(shape=(len(results), len(results), 2), fill_value=np.nan)
     stats_time = np.full(shape=(len(results), len(results), 2 ), fill_value=np.nan)
 
