@@ -6,12 +6,15 @@ from scipy.spatial.distance import minkowski
 
 from utils.exceptions import RetentionPolicyException, VotingPolicyException
 
+VOTING_POLICIES = ['MVS', 'MP']
+RETENTION_POLICIES = ['NR', 'AR', 'DF', 'DD']
+
 
 class KIBLAlgorithm:
     def __init__(self, K: int, voting_policy: str = 'MVS', retention_policy: str = 'NR'):
-        if voting_policy not in ['MVS', 'MP']:
+        if voting_policy not in VOTING_POLICIES:
             raise VotingPolicyException()
-        if retention_policy not in ['NR', 'AR', 'DF', 'DD']:
+        if retention_policy not in RETENTION_POLICIES:
             raise RetentionPolicyException()
 
         self.K = K
