@@ -2,6 +2,7 @@ import argparse
 import json
 import multiprocessing
 import os
+from copy import deepcopy
 from multiprocessing.pool import ThreadPool
 from threading import Lock
 from time import time
@@ -12,6 +13,7 @@ import numpy as np
 from tqdm import tqdm
 
 from algorithms.KIBLAlgorithm import KIBLAlgorithm, VOTING_POLICIES, RETENTION_POLICIES
+from algorithms.reduction_KIBL_algorithm import reduction_KIBL_algorithm, REDUCTION_METHODS
 from preprocessing.hypothyroid import preprocess as preprocess_hypothyroid
 from preprocessing.pen_based import preprocess as preprocess_penn
 from utils.dataset import read_dataset
@@ -42,12 +44,10 @@ def read_data(name: str) -> List[dict]:
     return folds
 
 
-def run_knn_fold(fold, k, r, seed, i=None, lock=None):
+def run_knn_fold(fold, alg, seed, i=None, lock=None):
     np.random.seed(seed)
-
     time_start = time()
 
-    alg = KIBLAlgorithm(K=k, r=r)
     alg.fit(fold['X_train'], fold['y_train'])
     val_data = list(zip(fold['X_val'], fold['y_val']))
 
@@ -90,6 +90,8 @@ def run_kIBL(folds, name, seed, par):
         for r in R_VALUES:
             for voting_policy in VOTING_POLICIES:
                 for retention_policy in RETENTION_POLICIES:
+                    alg = KIBLAlgorithm(K=k, voting_policy=voting_policy, retention_policy=retention_policy, r=r)
+
                     i_experiment += 1
                     print('-' * 150)
                     print(f'> Running experiment ({i_experiment}/{n_experiments}): '
@@ -102,7 +104,7 @@ def run_kIBL(folds, name, seed, par):
 
                         fold_results = {}
                         for i, fold in enumerate(folds):
-                            pool.apply_async(run_knn_fold, args=(fold, k, r, seed, i, lock),
+                            pool.apply_async(run_knn_fold, args=(fold, alg, seed, i, lock),
                                              callback=lambda x: fold_results.update({x[0]: x[1]}))
 
                         pool.close()
@@ -110,7 +112,7 @@ def run_kIBL(folds, name, seed, par):
 
                         fold_results = [fold_results[f] for f in range(len(folds))]
                     else:
-                        fold_results = list(map(lambda x: run_knn_fold(x[1], k, r, seed, x[0]), enumerate(folds)))
+                        fold_results = list(map(lambda x: run_knn_fold(x[1], alg, seed, x[0]), enumerate(folds)))
 
                     results.append({
                         'k': k,
@@ -212,8 +214,36 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
     select_mat_time = eval_stat_test(stats_time, results, test=test)
 
 
-def run_reduction_kIBL(folds, kIBL_params, seed):
-    pass
+def run_reduction_kIBL_fold(fold, method, alg, seed, i=None, lock=None):
+    np.random.seed(seed)
+    reduced_fold = deepcopy(fold)
+    reduced_fold['X_train'], reduced_fold['y_train'] = \
+        reduction_KIBL_algorithm(alg, fold['X_train'], fold['y_train'], method)
+    return run_knn_fold(reduced_fold, alg, seed, i, lock)
+
+
+def run_reduction_kIBL(folds, seed, par):
+    alg = KIBLAlgorithm(K=3)
+    for i_experiment, method in enumerate(REDUCTION_METHODS):
+        print('-' * 150)
+        print(f'> Running experiment ({i_experiment + 1}/{len(REDUCTION_METHODS)}): {method}' + ' ' * 100)
+
+        if par:
+            cores = min(multiprocessing.cpu_count(), 5)
+            pool = ThreadPool(cores)
+            lock = Lock()
+
+            fold_results = {}
+            for i, fold in enumerate(folds):
+                pool.apply_async(run_reduction_kIBL_fold, args=(fold, method, alg, seed, i, lock),
+                                 callback=lambda x: fold_results.update({x[0]: x[1]}))
+
+            pool.close()
+            pool.join()
+
+            fold_results = [fold_results[f] for f in range(len(folds))]
+        else:
+            fold_results = list(map(lambda x: run_reduction_kIBL_fold(x[1], method, alg, seed, x[0]), enumerate(folds)))
 
 
 if __name__ == '__main__':
@@ -238,6 +268,5 @@ if __name__ == '__main__':
     elif args.algorithm == 'stat':
         run_stat_select_kIBL(kIBL_json_path=os.path.join('output', f'{args.dataset}_results.json'), name=args.dataset)
     else:
-        kIBL_params = {}
         data = read_data(args.dataset)
-        run_reduction_kIBL(folds=data, kIBL_params=kIBL_params, seed=args.seed)
+        run_reduction_kIBL(folds=data, seed=args.seed, par=args.par)
