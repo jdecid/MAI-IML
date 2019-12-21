@@ -1,7 +1,8 @@
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder
 
-CATEGORICAL_FEATURES = ['workclass', 'education', 'marital-status', 'occupation', 'relationship', 'race', 'sex', 'native-country']
+CATEGORICAL_FEATURES = ['workclass', 'education', 'marital-status', 'occupation', 'relationship', 'race', 'sex',
+                        'native-country']
 
 NUMERICAL_FEATURES = ['age', 'fnlwgt', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
 
@@ -20,10 +21,14 @@ def preprocess(train_dataset, validation_dataset):
     df_val = df_val.applymap(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
 
     # Real Y labels
+    le = LabelEncoder()
     y_train = df_train['class'].copy()
-    df_train = df_train.drop(columns=['class'])
+    y_train = le.fit_transform(y_train)
 
     y_val = df_val['class'].copy()
+    y_val = le.transform(y_val)
+
+    df_train = df_train.drop(columns=['class'])
     df_val = df_val.drop(columns=['class'])
 
     # Encode categorical values into numerical with OHE

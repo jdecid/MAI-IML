@@ -24,18 +24,22 @@ class KIBLAlgorithm:
         self.X = None
         self.y = None
 
+        self.classes = 0
+
     def fit(self, X, y):
         self.X = X
         self.y = y
 
-    def k_neighbours(self, current_instance: np.ndarray) -> List[int]:
-        similarity = list(map(lambda x: KIBLAlgorithm.__distance_function(x, current_instance), self.X))
+        self.classes = len(set(y))
+
+    def k_neighbours(self, X: np.ndarray, y: int = None) -> List[int]:
+        similarity = list(map(lambda x: KIBLAlgorithm.__distance_function(x, X), self.X))
         k_nearest = similarity.sort()[:self.K]
-        nearest = self.__vote(k_nearest)
+        y_pred = self.__vote(k_nearest)
 
-        self.__apply_retention_policy(current_instance, nearest)
+        self.__apply_retention_policy(X, y, y_pred, k_nearest)
 
-        return nearest
+        return y_pred
 
     def __vote(self, k_most_similar: List[int]):
         counter = Counter(k_most_similar)
@@ -49,16 +53,23 @@ class KIBLAlgorithm:
             else:
                 return most_common[0]
 
-    def __apply_retention_policy(self, new_X: np.ndarray, new_y):
+    def __apply_retention_policy(self, X: np.ndarray, y: int, y_pred: int, k_nearest: np.ndarray):
         if self.retention_policy == 'AR':
-            self.X.append(new_X)
-            self.y.append(new_y)
+            self.X.append(X)
+            self.y.append(y)
 
         elif self.retention_policy == 'DF':
-            pass
+            if y != y_pred:
+                self.X.append(X)
+                self.y.append(y)
 
         elif self.retention_policy == 'DD':
-            pass
+            counter = Counter(k_nearest)
+            majority_cases = max(counter.values())
+            d = (self.K - majority_cases) / (self.classes - 1) * majority_cases
+            if d > 0.5:
+                self.X.append(X)
+                self.y.append(y)
 
     @staticmethod
     def __distance_function(u: np.ndarray, v: np.ndarray, r=2):
