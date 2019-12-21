@@ -13,7 +13,7 @@ def preprocess(train_dataset, validation_dataset):
 
     # TODO: Remove sample
     df_train = pd.DataFrame(train_data)
-    df_train = df_train.sample(n=5000, replace=False, random_state=1).reset_index(drop=True)
+    # df_train = df_train.sample(n=5000, replace=False, random_state=1).reset_index(drop=True)
 
     df_val = pd.DataFrame(val_data)
 
@@ -52,4 +52,4 @@ def preprocess(train_dataset, validation_dataset):
     X_df_train = pd.concat((X_categorical_train, X_numerical_train), axis=1)
     X_df_val = pd.concat((X_categorical_val, X_numerical_val), axis=1)
 
-    return (X_df_train, y_train), (X_df_val, y_val)
+    return (X_df_train.values, y_train), (X_df_val.values, y_val)

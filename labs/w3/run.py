@@ -1,5 +1,6 @@
 import argparse
 import os
+from time import time
 from typing import List
 
 from tqdm import tqdm
@@ -7,6 +8,9 @@ from tqdm import tqdm
 from algorithms.KIBLAlgorithm import KIBLAlgorithm, VOTING_POLICIES, RETENTION_POLICIES
 from preprocessing.adult import preprocess
 from utils.dataset import read_dataset
+
+K_VALUES = [1, 3, 5, 7]
+R_VALUES = [2]
 
 
 def read_data(name: str) -> List[dict]:
@@ -26,6 +30,50 @@ def read_data(name: str) -> List[dict]:
     return folds
 
 
+def run_knn(folds):
+    t = tqdm(total=len(K_VALUES) * len(VOTING_POLICIES) * len(RETENTION_POLICIES) * len(R_VALUES),
+             desc='KNN', ncols=150)
+
+    results = []
+    for k in K_VALUES:
+        for r in R_VALUES:
+            for voting_policy in VOTING_POLICIES:
+                for retention_policy in RETENTION_POLICIES:
+
+                    fold_results = []
+                    for fold in tqdm(folds, desc='Folds', ncols=150, position=1):
+                        time_start = time()
+
+                        alg = KIBLAlgorithm(K=k)
+                        alg.fit(fold['X_train'], fold['y_train'])
+
+                        corrects = 0
+                        val_data = list(zip(fold['X_val'], fold['y_val']))
+
+                        t_val = tqdm(total=len(val_data), desc='Validation data', ncols=150, position=0, leave=True)
+                        for X, y in val_data:
+                            prediction = alg.k_neighbours(X, y)
+                            if prediction == y:
+                                corrects += 1
+
+                            t_val.update()
+                        t_val.clear()
+
+                        fold_results.append({
+                            'accuracy': corrects / len(val_data),
+                            'time': time() - time_start
+                        })
+
+                    results.append({
+                        'k': k,
+                        'vp': voting_policy,
+                        'rp': retention_policy,
+                        'results': fold_results
+                    })
+
+                    t.update()
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run all Clustering project for MAI-IML')
     parser.add_argument('output_path', type=str, default='output', help='Output path for the logs')
@@ -38,11 +86,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    folds = read_data(args.dataset)
-    for fold in folds:
-        for k in [1, 3, 5, 7]:
-            for voting_policy in VOTING_POLICIES:
-                for retention_policy in RETENTION_POLICIES:
-                    alg = KIBLAlgorithm(K=k)
-                    alg.fit(fold['X_train'], fold['y_train'])
-                    results = alg.k_neighbours(fold['X_val'])
+    data = read_data(args.dataset)
+    run_knn(folds=data)

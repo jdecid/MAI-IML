@@ -33,8 +33,9 @@ class KIBLAlgorithm:
         self.classes = len(set(y))
 
     def k_neighbours(self, X: np.ndarray, y: int = None) -> List[int]:
-        similarity = list(map(lambda x: KIBLAlgorithm.__distance_function(x, X), self.X))
-        k_nearest = similarity.sort()[:self.K]
+        distances = self.__distance_function(self.X, X, 2)
+        # distances = list(map(lambda x: KIBLAlgorithm.__distance_function(x, X), self.X))
+        k_nearest = sorted(distances)[:self.K]
         y_pred = self.__vote(k_nearest)
 
         self.__apply_retention_policy(X, y, y_pred, k_nearest)
@@ -73,4 +74,5 @@ class KIBLAlgorithm:
 
     @staticmethod
     def __distance_function(u: np.ndarray, v: np.ndarray, r=2):
-        return minkowski(u, v, r)
+        return np.linalg.norm(u - v, axis=1, ord=r)
+        # return minkowski(u, v, r)
