@@ -58,7 +58,6 @@ def run_knn_fold(fold, k, r):
 
 
 def run_kIBL(folds, name, output_path, seed, par):
-    print(par)
     t = tqdm(total=len(K_VALUES) * len(VOTING_POLICIES) * len(RETENTION_POLICIES) * len(R_VALUES),
              desc='KNN', ncols=150)
 
