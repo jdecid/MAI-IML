@@ -206,8 +206,8 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
     pickle.dump(stats_accuracy, open(os.path.join(OUTPUT_PATH, name + '_accuracy.pkl'), mode='wb'))
     pickle.dump(stats_time, open(os.path.join(OUTPUT_PATH, name + '_time.pkl'), mode='wb'))
 
-    select_mat_acc = eval_stat_test(stats_accuracy, results, test='ttest')
-    select_mat_acc = eval_stat_test(stats_time , results, test='ttest')
+    select_mat_acc = eval_stat_test(stats_accuracy, results, test=test)
+    select_mat_time = eval_stat_test(stats_time, results, test=test)
 
 
 def run_reduction_kIBL(folds, kIBL_params, seed):
