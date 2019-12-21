@@ -125,15 +125,18 @@ def run_kIBL(folds, name, seed, par):
 
 
 def compute_wilcoxon(sample1, sample2):
-    stat, p = wilcoxon(sample1, sample2, zero_method='pratt')
+    try:
+        stat, p = wilcoxon(sample1, sample2)
+    except ValueError:
+        stat, p = 0, 1
     return {'stat': stat, 'p': p}
 
 
 def run_stat_select_kIBL(kIBL_json_path, name):
     results = json.loads(open(kIBL_json_path, 'r').read())
 
-    stats_accuracy = np.empty(shape=(len(results), len(results)))
-    stats_time = np.empty(shape=(len(results), len(results)))
+    stats_accuracy = np.full(shape=(len(results), len(results)), fill_value=np.nan)
+    stats_time = np.full(shape=(len(results), len(results)), fill_value=np.nan)
 
     for i, model1 in enumerate(results):
         for j, model2 in enumerate(results):

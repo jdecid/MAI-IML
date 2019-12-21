@@ -1,26 +1,36 @@
+from typing import Tuple
+
 import numpy as np
+
+from algorithms.KIBLAlgorithm import KIBLAlgorithm
 
 REDUCTION_METHODS = ['CNN', 'SNN' 'ENN', 'RENN'] + [f'DROP{i}' for i in range(1, 6)]
 
 
-def __cnn_reduction(X: np.ndarray) -> np.ndarray:
-    X_copy = X.copy()
-    # TODO: Initial U initialization
-    U = []
+def __cnn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    X = X.copy()
+    unique_labels = set(y)
+
+    U, V = [], []
+    for label in unique_labels:
+        index = np.random.choice(np.argwhere(y == label))
+        U.append(X[index, :])
+        U.append(y[index])
+
     while True:
-        nearest_x_idx = None
-        for i in range(X_copy.shape[1]):
-            if X_copy[i] is not None:
-                pass
-                # TODO: Implement
-
-        if nearest_x_idx is not None:
-            U.append(X_copy[nearest_x_idx])
-            X_copy[nearest_x_idx] = None
+        for i in range(X.shape[1]):
+            knn.fit(U, V)
+            pred = knn.k_neighbours(X[i, :], y[i])
+            if pred != y[i]:
+                break
         else:
-            break
+            U.append(X[i, :])
+            V.append(y[i])
+            X = np.delete(X, i, axis=0)
+            continue
+        break
 
-    return np.stack(U)
+    return np.stack(U), np.array(V)
 
 
 def reduction_KIBL_algorithm(X: np.ndarray, reduction_method: str):
