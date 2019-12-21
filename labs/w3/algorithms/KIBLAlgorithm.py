@@ -8,22 +8,33 @@ from utils.exceptions import RetentionPolicyException, VotingPolicyException
 
 
 class KIBLAlgorithm:
-    def __init__(self, X: np.ndarray, voting_policy, retention_policy: str = 'NR'):
+    def __init__(self, K: int, voting_policy: str = 'MVS', retention_policy: str = 'NR'):
         if voting_policy not in ['MVS', 'MP']:
             raise VotingPolicyException()
         if retention_policy not in ['NR', 'AR', 'DF', 'DD']:
             raise RetentionPolicyException()
 
+        self.K = K
         self.voting_policy = voting_policy
         self.retention_policy = retention_policy
+
         self.X = None
+        self.y = None
 
-    def get_most_similar(self, current_instance: np.ndarray, K: int) -> List[int]:
+    def fit(self, X, y):
+        self.X = X
+        self.y = y
+
+    def k_neighbours(self, current_instance: np.ndarray) -> List[int]:
         similarity = list(map(lambda x: KIBLAlgorithm.__distance_function(x, current_instance), self.X))
-        similarity.sort()
-        return similarity[:K]
+        k_nearest = similarity.sort()[:self.K]
+        nearest = self.__vote(k_nearest)
 
-    def vote(self, k_most_similar: List[int]):
+        self.__apply_retention_policy(current_instance)
+
+        return nearest
+
+    def __vote(self, k_most_similar: List[int]):
         counter = Counter(k_most_similar)
         max_occurrence = max(counter.values())
         most_common = [k for k in counter.keys() if counter[k] == max_occurrence]
@@ -31,11 +42,11 @@ class KIBLAlgorithm:
             return most_common[np.random.randint(len(most_common))]
         else:
             if len(most_common) > 1:
-                return self.vote(k_most_similar[:-1])
+                return self.__vote(k_most_similar[:-self.K])
             else:
                 return most_common[0]
 
-    def __apply_retention_policy(self, current_instance: np.ndarray, k_top):
+    def __apply_retention_policy(self, current_instance: np.ndarray):
         if self.retention_policy == 'AR':
             pass
         elif self.retention_policy == 'DF':

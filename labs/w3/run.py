@@ -3,6 +3,7 @@ import argparse
 from typing import Tuple, List
 
 import numpy as np
+from tqdm import tqdm
 
 from preprocessing.adult import preprocess
 from utils.dataset import read_dataset
@@ -10,7 +11,7 @@ from utils.dataset import read_dataset
 
 def read_data(name: str) -> List[Tuple[np.ndarray, np.ndarray]]:
     folds = []
-    for i in range(10):
+    for i in tqdm(range(10), desc=f'Reading {name}'):
         train_data = read_dataset(name=f'{name}.fold.00000{i}.train', dataset_path=os.path.join('datasets', name))
         validation_data = read_dataset(name=f'{name}.fold.00000{i}.test', dataset_path=os.path.join('datasets', name))
 
