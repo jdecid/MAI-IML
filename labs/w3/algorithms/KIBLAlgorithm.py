@@ -30,7 +30,7 @@ class KIBLAlgorithm:
         k_nearest = similarity.sort()[:self.K]
         nearest = self.__vote(k_nearest)
 
-        self.__apply_retention_policy(current_instance)
+        self.__apply_retention_policy(current_instance, nearest)
 
         return nearest
 
@@ -46,11 +46,14 @@ class KIBLAlgorithm:
             else:
                 return most_common[0]
 
-    def __apply_retention_policy(self, current_instance: np.ndarray):
+    def __apply_retention_policy(self, new_X: np.ndarray, new_y):
         if self.retention_policy == 'AR':
-            pass
+            self.X.append(new_X)
+            self.y.append(new_y)
+
         elif self.retention_policy == 'DF':
             pass
+
         elif self.retention_policy == 'DD':
             pass
 
