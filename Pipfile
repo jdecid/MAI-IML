@@ -18,6 +18,7 @@ pandas = "*"
 tqdm = "*"
 matplotlib = "==3.0.0"
 neupy = "*"
+cvxopt = "*"
 
 [requires]
 python_version = "3.6"
