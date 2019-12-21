@@ -15,6 +15,8 @@ from preprocessing.hypothyroid import preprocess as preprocess_hypothyroid
 from preprocessing.pen_based import preprocess as preprocess_penn
 from utils.dataset import read_dataset
 
+from scipy.stats import wilcoxon
+
 OUTPUT_PATH = 'output'
 
 K_VALUES = [1, 3, 5, 7]
@@ -121,8 +123,37 @@ def run_kIBL(folds, name, seed, par):
         f.write(results_json)
 
 
-def run_stat_select_kIBL(kIBL_json_path, seed):
-    pass
+def compute_wilcoxon(sample1, sample2):
+    fail = False
+    try:
+        stat, p = wilcoxon(sample1, sample2)
+    except:
+        stat, p = 0, 1
+        fail = True
+    return dict(stat=stat, p=p), fail
+
+
+def run_stat_select_kIBL(kIBL_json_path, name, seed):
+    results = json.loads(open(kIBL_json_path, 'r').read())
+    fail_accs = 0
+    fail_times = 0
+    for model1 in results:
+        for model2 in results:
+            if model1 == model2:
+                continue
+            res1_acc = list(map(lambda x: x['accuracy'], model1['results']))
+            res2_acc = list(map(lambda x: x['accuracy'], model2['results']))
+            res1_time = list(map(lambda x: x['time'], model1['results']))
+            res2_time = list(map(lambda x: x['time'], model2['results']))
+            model1['accuracy_test'], fail_acc = compute_wilcoxon(res1_acc, res2_acc)
+            model1['time_test'], fail_time = compute_wilcoxon(res1_time, res2_time)
+            fail_accs += 1 if fail_acc else 0
+            fail_times += 1 if fail_time else 0
+    print(fail_accs, fail_times)
+
+    results_json = json.dumps(results)
+    with open(os.path.join(OUTPUT_PATH, name + '_test.json'), mode='w') as f:
+        f.write(results_json)
 
 
 def run_reduction_kIBL(folds, kIBL_params, seed):
@@ -146,11 +177,12 @@ if __name__ == '__main__':
     if not os.path.exists(OUTPUT_PATH):
         os.makedirs(OUTPUT_PATH)
 
-    data = read_data(args.dataset)
+
     if args.algorithm == 'kIBL':
+        data = read_data(args.dataset)
         run_kIBL(folds=data, name=args.dataset, seed=args.seed, par=args.par)
     elif args.algorithm == 'stat':
-        run_stat_select_kIBL(args.results_kIBL, seed=args.seed)
+        run_stat_select_kIBL(args.results_kIBL, name=args.dataset, seed=args.seed)
     else:
         kIBL_params = {}
         run_reduction_kIBL(folds=data, kIBL_params=kIBL_params, seed=args.seed)
