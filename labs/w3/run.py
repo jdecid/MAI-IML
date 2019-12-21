@@ -145,8 +145,8 @@ def run_stat_select_kIBL(kIBL_json_path, name):
             res1_time = list(map(lambda x: x['time'], model1['results']))
             res2_time = list(map(lambda x: x['time'], model2['results']))
 
-            stat_accuracy, fail_acc = compute_wilcoxon(res1_acc, res2_acc)
-            stat_time, fail_time = compute_wilcoxon(res1_time, res2_time)
+            stat_accuracy = compute_wilcoxon(res1_acc, res2_acc)
+            stat_time = compute_wilcoxon(res1_time, res2_time)
 
             stats_accuracy[i, j] = stat_accuracy['p']
             stats_time[i, j] = stat_time['p']
