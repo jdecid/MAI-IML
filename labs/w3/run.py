@@ -7,6 +7,7 @@ from threading import Lock
 from time import time
 from typing import List
 
+import pickle
 import numpy as np
 from tqdm import tqdm
 
@@ -124,36 +125,34 @@ def run_kIBL(folds, name, seed, par):
 
 
 def compute_wilcoxon(sample1, sample2):
-    fail = False
-    try:
-        stat, p = wilcoxon(sample1, sample2)
-    except:
-        stat, p = 0, 1
-        fail = True
-    return dict(stat=stat, p=p), fail
+    stat, p = wilcoxon(sample1, sample2, zero_method='pratt')
+    return {'stat': stat, 'p': p}
 
 
-def run_stat_select_kIBL(kIBL_json_path, name, seed):
+def run_stat_select_kIBL(kIBL_json_path, name):
     results = json.loads(open(kIBL_json_path, 'r').read())
-    fail_accs = 0
-    fail_times = 0
-    for model1 in results:
-        for model2 in results:
+
+    stats_accuracy = np.empty(shape=(len(results), len(results)))
+    stats_time = np.empty(shape=(len(results), len(results)))
+
+    for i, model1 in enumerate(results):
+        for j, model2 in enumerate(results):
             if model1 == model2:
                 continue
             res1_acc = list(map(lambda x: x['accuracy'], model1['results']))
             res2_acc = list(map(lambda x: x['accuracy'], model2['results']))
+
             res1_time = list(map(lambda x: x['time'], model1['results']))
             res2_time = list(map(lambda x: x['time'], model2['results']))
-            model1['accuracy_test'], fail_acc = compute_wilcoxon(res1_acc, res2_acc)
-            model1['time_test'], fail_time = compute_wilcoxon(res1_time, res2_time)
-            fail_accs += 1 if fail_acc else 0
-            fail_times += 1 if fail_time else 0
-    print(fail_accs, fail_times)
 
-    results_json = json.dumps(results)
-    with open(os.path.join(OUTPUT_PATH, name + '_test.json'), mode='w') as f:
-        f.write(results_json)
+            stat_accuracy, fail_acc = compute_wilcoxon(res1_acc, res2_acc)
+            stat_time, fail_time = compute_wilcoxon(res1_time, res2_time)
+
+            stats_accuracy[i, j] = stat_accuracy['p']
+            stats_time[i, j] = stat_time['p']
+
+    pickle.dump(stats_accuracy, open(os.path.join(OUTPUT_PATH, name + '_accuracy.pkl'), mode='wb'))
+    pickle.dump(stats_time, open(os.path.join(OUTPUT_PATH, name + '_time.pkl'), mode='wb'))
 
 
 def run_reduction_kIBL(folds, kIBL_params, seed):
@@ -168,7 +167,6 @@ if __name__ == '__main__':
                         choices=['kIBL', 'stat', 'reduction'])
     parser.add_argument('--dataset', type=str, help='Select dataset to use',
                         choices=['hypothyroid', 'pen-based'])
-    parser.add_argument('--results_kIBL', type=str, help='JSON with saved kIBL results')
     parser.add_argument('--par', type=str, help='Whether to take advantage of multiprocessing',
                         const=True, default=False, nargs='?')
 
@@ -177,12 +175,12 @@ if __name__ == '__main__':
     if not os.path.exists(OUTPUT_PATH):
         os.makedirs(OUTPUT_PATH)
 
-
     if args.algorithm == 'kIBL':
         data = read_data(args.dataset)
         run_kIBL(folds=data, name=args.dataset, seed=args.seed, par=args.par)
     elif args.algorithm == 'stat':
-        run_stat_select_kIBL(args.results_kIBL, name=args.dataset, seed=args.seed)
+        run_stat_select_kIBL(kIBL_json_path=os.path.join('output', f'{args.dataset}_results.json'), name=args.dataset)
     else:
         kIBL_params = {}
+        data = read_data(args.dataset)
         run_reduction_kIBL(folds=data, kIBL_params=kIBL_params, seed=args.seed)
