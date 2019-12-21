@@ -1,8 +1,8 @@
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder, LabelEncoder
 
-CATEGORICAL_FEATURES = ['workclass', 'education', 'marital-status', 'occupation', 'relationship', 'race', 'sex',
-                        'native-country']
+CATEGORICAL_FEATURES = ['workclass', 'education', 'marital-status', 'occupation',
+                        'relationship', 'race', 'sex', 'native-country']
 
 NUMERICAL_FEATURES = ['age', 'fnlwgt', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
 
@@ -13,7 +13,7 @@ def preprocess(train_dataset, validation_dataset):
 
     # TODO: Remove sample
     df_train = pd.DataFrame(train_data)
-    # df_train = df_train.sample(n=5000, replace=False, random_state=1).reset_index(drop=True)
+    df_train = df_train.sample(n=5000, replace=False, random_state=1).reset_index(drop=True)
 
     df_val = pd.DataFrame(val_data)
 

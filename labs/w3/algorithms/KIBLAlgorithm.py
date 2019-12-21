@@ -1,8 +1,7 @@
 from collections import Counter
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
-from scipy.spatial.distance import minkowski
 
 from utils.exceptions import RetentionPolicyException, VotingPolicyException
 
@@ -11,7 +10,7 @@ RETENTION_POLICIES = ['NR', 'AR', 'DF', 'DD']
 
 
 class KIBLAlgorithm:
-    def __init__(self, K: int, voting_policy: str = 'MVS', retention_policy: str = 'NR'):
+    def __init__(self, K: int, voting_policy: str = 'MVS', retention_policy: str = 'NR', r=2):
         if voting_policy not in VOTING_POLICIES:
             raise VotingPolicyException()
         if retention_policy not in RETENTION_POLICIES:
@@ -34,15 +33,16 @@ class KIBLAlgorithm:
 
     def k_neighbours(self, X: np.ndarray, y: int = None) -> List[int]:
         distances = self.__distance_function(self.X, X, 2)
+        # distances = list(enumerate(distances))
         # distances = list(map(lambda x: KIBLAlgorithm.__distance_function(x, X), self.X))
-        k_nearest = sorted(distances)[:self.K]
-        y_pred = self.__vote(k_nearest)
+        k_nearest_idx = np.argsort(distances)[:self.K]
+        y_pred = self.__vote(self.y[k_nearest_idx])
 
-        self.__apply_retention_policy(X, y, y_pred, k_nearest)
+        self.__apply_retention_policy(X, y, y_pred, self.y[k_nearest_idx])
 
         return y_pred
 
-    def __vote(self, k_most_similar: List[int]):
+    def __vote(self, k_most_similar: List[Tuple[int]]):
         counter = Counter(k_most_similar)
         max_occurrence = max(counter.values())
         most_common = [k for k in counter.keys() if counter[k] == max_occurrence]

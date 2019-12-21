@@ -1,4 +1,6 @@
 import argparse
+import json
+import multiprocessing
 import os
 from time import time
 from typing import List
@@ -9,7 +11,7 @@ from algorithms.KIBLAlgorithm import KIBLAlgorithm, VOTING_POLICIES, RETENTION_P
 from preprocessing.adult import preprocess
 from utils.dataset import read_dataset
 
-K_VALUES = [1, 3, 5, 7]
+K_VALUES = [1, 3]  # , 5, 7]
 R_VALUES = [2]
 
 
@@ -30,39 +32,46 @@ def read_data(name: str) -> List[dict]:
     return folds
 
 
-def run_knn(folds):
+def run_knn_fold(fold, k, r):
+    time_start = time()
+
+    alg = KIBLAlgorithm(K=k, r=r)
+    alg.fit(fold['X_train'], fold['y_train'])
+
+    val_data = list(zip(fold['X_val'], fold['y_val']))
+    t_val = tqdm(total=len(val_data), desc='Validation data', ncols=150, position=1, leave=True)
+
+    corrects = 0
+    for X, y in val_data:
+        prediction = alg.k_neighbours(X, y)
+        if prediction == y:
+            corrects += 1
+
+        t_val.update()
+    t_val.clear()
+
+    return {
+        'accuracy': corrects / len(val_data),
+        'time': time() - time_start
+    }
+
+
+def run_knn(folds, par=False):
     t = tqdm(total=len(K_VALUES) * len(VOTING_POLICIES) * len(RETENTION_POLICIES) * len(R_VALUES),
              desc='KNN', ncols=150)
+
+    cores = min(multiprocessing.cpu_count(), 10)
+    pool = multiprocessing.Pool(cores)
 
     results = []
     for k in K_VALUES:
         for r in R_VALUES:
             for voting_policy in VOTING_POLICIES:
                 for retention_policy in RETENTION_POLICIES:
-
-                    fold_results = []
-                    for fold in tqdm(folds, desc='Folds', ncols=150, position=1):
-                        time_start = time()
-
-                        alg = KIBLAlgorithm(K=k)
-                        alg.fit(fold['X_train'], fold['y_train'])
-
-                        corrects = 0
-                        val_data = list(zip(fold['X_val'], fold['y_val']))
-
-                        t_val = tqdm(total=len(val_data), desc='Validation data', ncols=150, position=0, leave=True)
-                        for X, y in val_data:
-                            prediction = alg.k_neighbours(X, y)
-                            if prediction == y:
-                                corrects += 1
-
-                            t_val.update()
-                        t_val.clear()
-
-                        fold_results.append({
-                            'accuracy': corrects / len(val_data),
-                            'time': time() - time_start
-                        })
+                    if par:
+                        fold_results = pool.map(lambda x: run_knn_fold(x, k, r), folds)
+                    else:
+                        fold_results = list(map(lambda x: run_knn_fold(x, k, r), folds))
 
                     results.append({
                         'k': k,
@@ -71,7 +80,11 @@ def run_knn(folds):
                         'results': fold_results
                     })
 
-                    t.update()
+                t.update()
+
+    results_json = json.dumps(results)
+    with open('results.json', mode='w') as f:
+        f.write(results_json)
 
 
 if __name__ == '__main__':
