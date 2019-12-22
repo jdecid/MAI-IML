@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import multiprocessing
 import os
 import pickle
@@ -19,6 +20,8 @@ from preprocessing.hypothyroid import preprocess as preprocess_hypothyroid
 from preprocessing.pen_based import preprocess as preprocess_penn
 from utils.dataset import read_dataset
 from utils.exceptions import TestMethodException
+
+from math import sqrt
 
 import matplotlib.pyplot as plt
 
@@ -258,7 +261,15 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
     plt.colorbar()
     plt.show()
 
-    print('Best index', np.argmax(np.sum(combine_mat == 2, axis=0)), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
+    N = select_mat_acc.shape[0]
+    threshold = N/2 + 1.96*sqrt(N)/2
+    best_accuracy_idx = np.argwhere(np.sum(select_mat_acc < 2, axis=1) >= threshold).flatten()
+    print('Best indexes according to accuracy', best_accuracy_idx)
+    print('Best indexes according to efficiency to break ties', np.argwhere(
+        np.sum(select_mat_time[best_accuracy_idx] != 1,
+               axis=0) >= threshold).flatten()
+          )
+    #print('Best index', np.argmax(np.sum(select_mat_acc == 1, axis=0)), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
     #print('Best index', np.argwhere(np.amax(np.sum(combine_mat == 2, axis=0)) == (np.sum(combine_mat == 1, axis=0))), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
 
 
@@ -279,7 +290,7 @@ def run_reduction_kIBL_fold(fold, method, config, seed, i=None, lock=None):
 
 def run_reduction_kIBL(folds, seed, par):
     config = {'K': 3}
-    for i_experiment, method in enumerate(REDUCTION_METHODS[:2]):
+    for i_experiment, method in enumerate(REDUCTION_METHODS[3:4]):
         print('-' * 150)
         print(f'> Running experiment ({i_experiment + 1}/{len(REDUCTION_METHODS)}): {method}' + ' ' * 100)
 
@@ -314,6 +325,12 @@ if __name__ == '__main__':
                         const=True, default=False, nargs='?')
 
     args = parser.parse_args()
+
+    logging.getLogger().setLevel(logging.DEBUG)
+    logging.basicConfig(filename=os.path.join('output', 'log.txt'),
+                        filemode='w',
+                        format='%(message)s',
+                        level=logging.DEBUG)
 
     if not os.path.exists(OUTPUT_PATH):
         os.makedirs(OUTPUT_PATH)
