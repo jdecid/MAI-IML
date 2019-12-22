@@ -68,11 +68,18 @@ def __renn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[
 
 
 def __ib3_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    def is_acceptable(p, z, n):
+    def calculate_boundaries(p, z, n):
         left = p + z * z / 2 * n
         right = z * np.sqrt(p * (1 - p) / n + z * z / 4 * n * n)
         bottom = 1 + z ** 2 / n
         return (left + right) / bottom, (left - right) / bottom
+
+    def is_acceptable(p, z, n, to_accept: bool):
+        upper, lower = calculate_boundaries(p, z, n)
+        if to_accept:
+            pass
+        else:
+            pass
 
     def is_significantly_poor():
         return
@@ -80,14 +87,17 @@ def __ib3_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[n
     S = np.empty(shape=(1, X.shape[1]))
     S[0, :] = X[0, :]
     V = np.array([y[0]])
+    classification_record = {}
 
     for t_idx in range(1, X.shape[0]):
         a_idx = None
         a_distance = np.inf
         for s_idx in range(S.shape[0]):
-            if is_acceptable():
+            if is_acceptable(p=np.nan, z=0.9, n=np.nan, to_accept=True):
+                s_distance = KIBLAlgorithm.distance_function(X[t_idx, :], S[s_idx, :], r=knn.r)
                 if s_distance < a_distance:
                     a_idx = s_idx
+                    a_distance = s_distance
 
         if a_idx is None:
             a_idx = np.random.randint(0, S.shape[0])
@@ -97,6 +107,7 @@ def __ib3_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[n
 
         indices_to_remove = []
         for s_idx in range(S.shape[0]):
+            s_distance = KIBLAlgorithm.distance_function(X[t_idx, :], S[s_idx, :], r=knn.r)
             if s_distance <= a_distance:
                 # TODO: Update class record
                 if is_significantly_poor():
@@ -105,7 +116,7 @@ def __ib3_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[n
 
     indices_to_remove = []
     for s_idx in range(S.shape[0]):
-        if not is_acceptable():
+        if not is_acceptable(p=np.nan, z=0.7, n=np.nan, to_accept=False):
             indices_to_remove.append(s_idx)
     S = np.delete(S, indices_to_remove, axis=0)
 
