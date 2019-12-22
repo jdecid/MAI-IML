@@ -1,6 +1,3 @@
-import logging
-from typing import Tuple, List, Set
-
 import numpy as np
 
 from algorithms.KIBLAlgorithm import KIBLAlgorithm
