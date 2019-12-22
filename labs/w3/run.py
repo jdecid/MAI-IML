@@ -2,14 +2,15 @@ import argparse
 import json
 import multiprocessing
 import os
+import pickle
 from copy import deepcopy
 from multiprocessing.pool import ThreadPool
 from threading import Lock
 from time import time
 from typing import List
 
-import pickle
 import numpy as np
+from scipy.stats import wilcoxon, ttest_ind
 from tqdm import tqdm
 
 from algorithms.KIBLAlgorithm import KIBLAlgorithm, VOTING_POLICIES, RETENTION_POLICIES
@@ -17,13 +18,14 @@ from algorithms.reduction_KIBL_algorithm import reduction_KIBL_algorithm, REDUCT
 from preprocessing.hypothyroid import preprocess as preprocess_hypothyroid
 from preprocessing.pen_based import preprocess as preprocess_penn
 from utils.dataset import read_dataset
-
-from scipy.stats import wilcoxon, ttest_ind
+from utils.exceptions import TestMethodException
 
 OUTPUT_PATH = 'output'
 
 K_VALUES = [1, 3, 5, 7]
 R_VALUES = [1, 2, 3]
+
+TEST_METHODS = ['anova', 'wilcoxon', 'ttest']
 
 
 def read_data(name: str) -> List[dict]:
@@ -44,10 +46,11 @@ def read_data(name: str) -> List[dict]:
     return folds
 
 
-def run_knn_fold(fold, alg, seed, i=None, lock=None):
+def run_knn_fold(fold: dict, config: dict, seed: int, i=None, lock=None):
     np.random.seed(seed)
     time_start = time()
 
+    alg = KIBLAlgorithm(**config)
     alg.fit(fold['X_train'], fold['y_train'])
     val_data = list(zip(fold['X_val'], fold['y_val']))
 
@@ -90,7 +93,7 @@ def run_kIBL(folds, name, seed, par):
         for r in R_VALUES:
             for voting_policy in VOTING_POLICIES:
                 for retention_policy in RETENTION_POLICIES:
-                    alg = KIBLAlgorithm(K=k, voting_policy=voting_policy, retention_policy=retention_policy, r=r)
+                    config = {'K': k, 'r': r, 'voting_policy': voting_policy, 'retention_policy': retention_policy}
 
                     i_experiment += 1
                     print('-' * 150)
@@ -104,7 +107,7 @@ def run_kIBL(folds, name, seed, par):
 
                         fold_results = {}
                         for i, fold in enumerate(folds):
-                            pool.apply_async(run_knn_fold, args=(fold, alg, seed, i, lock),
+                            pool.apply_async(run_knn_fold, args=(fold, config, seed, i, lock),
                                              callback=lambda x: fold_results.update({x[0]: x[1]}))
 
                         pool.close()
@@ -112,7 +115,7 @@ def run_kIBL(folds, name, seed, par):
 
                         fold_results = [fold_results[f] for f in range(len(folds))]
                     else:
-                        fold_results = list(map(lambda x: run_knn_fold(x[1], alg, seed, x[0]), enumerate(folds)))
+                        fold_results = list(map(lambda x: run_knn_fold(x[1], config, seed, x[0]), enumerate(folds)))
 
                     results.append({
                         'k': k,
@@ -127,7 +130,9 @@ def run_kIBL(folds, name, seed, par):
 
 
 def compute_stat_test(sample1, sample2, test):
-    assert test in ['anova', 'wilcoxon', 'ttest']
+    if test not in TEST_METHODS:
+        raise TestMethodException()
+    
     if test == 'anova':
         raise NotImplementedError
     elif test == 'wilcoxon':
@@ -142,7 +147,9 @@ def compute_stat_test(sample1, sample2, test):
 
 
 def eval_stat_test(mat, results, test, alpha=0.05):
-    assert test in ['anova', 'wilcoxon', 'ttest']
+    if test not in TEST_METHODS:
+        raise TestMethodException()
+
     select_mat = np.zeros(mat.shape[:-1])
     if test == 'anova':
         raise NotImplementedError()
@@ -184,12 +191,15 @@ def eval_stat_test(mat, results, test, alpha=0.05):
 
 
 def run_stat_select_kIBL(kIBL_json_path, name, test):
-    assert test in ['anova', 'wilcoxon', 'ttest']
+    if test not in TEST_METHODS:
+        raise TestMethodException()
+
     if test == 'anova':
         raise NotImplementedError()
+
     results = json.loads(open(kIBL_json_path, 'r').read())
     stats_accuracy = np.full(shape=(len(results), len(results), 2), fill_value=np.nan)
-    stats_time = np.full(shape=(len(results), len(results), 2 ), fill_value=np.nan)
+    stats_time = np.full(shape=(len(results), len(results), 2), fill_value=np.nan)
 
     for i, model1 in enumerate(results):
         for j, model2 in enumerate(results):
@@ -223,7 +233,7 @@ def run_reduction_kIBL_fold(fold, method, alg, seed, i=None, lock=None):
 
 
 def run_reduction_kIBL(folds, seed, par):
-    alg = KIBLAlgorithm(K=3)
+    config = {'K': 3}
     for i_experiment, method in enumerate(REDUCTION_METHODS):
         print('-' * 150)
         print(f'> Running experiment ({i_experiment + 1}/{len(REDUCTION_METHODS)}): {method}' + ' ' * 100)
@@ -235,7 +245,7 @@ def run_reduction_kIBL(folds, seed, par):
 
             fold_results = {}
             for i, fold in enumerate(folds):
-                pool.apply_async(run_reduction_kIBL_fold, args=(fold, method, alg, seed, i, lock),
+                pool.apply_async(run_reduction_kIBL_fold, args=(fold, method, config, seed, i, lock),
                                  callback=lambda x: fold_results.update({x[0]: x[1]}))
 
             pool.close()
@@ -243,7 +253,8 @@ def run_reduction_kIBL(folds, seed, par):
 
             fold_results = [fold_results[f] for f in range(len(folds))]
         else:
-            fold_results = list(map(lambda x: run_reduction_kIBL_fold(x[1], method, alg, seed, x[0]), enumerate(folds)))
+            fold_results = list(
+                map(lambda x: run_reduction_kIBL_fold(x[1], method, config, seed, x[0]), enumerate(folds)))
 
 
 if __name__ == '__main__':

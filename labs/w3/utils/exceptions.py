@@ -15,3 +15,12 @@ class VotingPolicyException(Exception):
         message += '\t- MVS: Most Voted Solution\n'
         message += '\t- MP: Modified Plurality\n'
         super().__init__(message)
+
+
+class TestMethodException(Exception):
+    def __init__(self):
+        message = '\ntest_method must have one of the following values:\n'
+        message += '\t- anova\n'
+        message += '\t- wilcoxon\n'
+        message += '\t- ttest\n'
+        super().__init__(message)
