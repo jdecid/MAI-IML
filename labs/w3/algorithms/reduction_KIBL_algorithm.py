@@ -8,28 +8,38 @@ REDUCTION_METHODS = ['CNN', 'RENN', 'IB3', 'DROP2', 'DROP3']
 
 
 def __cnn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    X = X.copy()
-    unique_labels = set(y)
-
     U, V = [], []
 
-    for label in unique_labels:
+    # Random initialization with one random element for each different class
+    for label in set(y):
         i = np.random.choice(np.argwhere(y == label).reshape(-1))
+        # Add to new sets
         U.append(X[i, :])
         V.append(y[i])
+        # Remove from new sets
+        X = np.delete(X, i, axis=0)
+        y = np.delete(y, i)
 
     U = np.array(U)
     V = np.array(V)
+    knn.fit(U, V)
 
     while True:
-        knn.fit(np.array(U), np.array(V))
-        for i in range(X.shape[1]):
+        indices_to_remove = []
+        for i in range(X.shape[0]):
             pred = knn.k_neighbours(X[i, :], y[i])
             if pred != y[i]:
-                U = np.vstack((U, X[i, :]))
-                V = np.concatenate((V, [y[i]]))
-                X = np.delete(X, i, axis=0)
-                break
+                indices_to_remove.append(i)
+
+        if len(indices_to_remove):
+            # Update U and V if prediction is wrong and fit the model
+            U = np.vstack((U, X[indices_to_remove, :]))
+            V = np.concatenate((V, y[indices_to_remove]))
+            knn.fit(U, V)
+
+            # Remove instance from X
+            X = np.delete(X, indices_to_remove, axis=0)
+            y = np.delete(y, indices_to_remove)
         else:
             break
 
@@ -37,19 +47,32 @@ def __cnn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[n
 
 
 def __renn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    knn.fit(X, y)
+
+    while True:
+        indices_to_remove = []
+        for i in range(X.shape[0]):
+            pred = knn.k_neighbours(X[i, :], y[i])
+            if pred != y[i]:
+                indices_to_remove.append(i)
+
+        if len(indices_to_remove):
+            # Remove instance from X and fit the model
+            X = np.delete(X, indices_to_remove, axis=0)
+            y = np.delete(y, indices_to_remove)
+            knn.fit(X, y)
+        else:
+            break
+
+    return X, y
+
+
+def __ib3_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     U = X.copy()
     V = y.copy()
 
-    while True:
-        knn.fit(U, V)
-        for i in range(U.shape[1]):
-            pred = knn.k_neighbours(U[i, :], V[i])
-            if pred != y[i]:
-                U = np.delete(U, i, axis=0)
-                V = np.delete(V, i, axis=0)
-                break
-        else:
-            break
+    for i in range(X.shape[0]):
+        pass
 
     return U, V
 
@@ -58,11 +81,14 @@ def reduction_KIBL_algorithm(config: dict, X: np.ndarray, y: np.ndarray, reducti
     if reduction_method not in REDUCTION_METHODS:
         raise ValueError(f'Unknown reduction method {reduction_KIBL_algorithm()}')
 
-    np.random.seed(seed)
-
+    X = X.copy()
+    y = y.copy()
     alg = KIBLAlgorithm(**config)
+    np.random.seed(seed)
 
     if reduction_method == 'CNN':
         return __cnn_reduction(alg, X, y)
     elif reduction_method == 'RENN':
         return __renn_reduction(alg, X, y)
+    elif reduction_method == 'IB3':
+        return __ib3_reduction(alg, X, y)
