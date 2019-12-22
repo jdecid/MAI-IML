@@ -74,11 +74,42 @@ def __ib3_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[n
         bottom = 1 + z ** 2 / n
         return (left + right) / bottom, (left - right) / bottom
 
-    S = []
+    def is_significantly_poor():
+        return
 
-    for i in range(X.shape[0]):
-        pass
-    return U, V
+    S = np.empty(shape=(1, X.shape[1]))
+    S[0, :] = X[0, :]
+    V = np.array([y[0]])
+
+    for t_idx in range(1, X.shape[0]):
+        a_idx = None
+        a_distance = np.inf
+        for s_idx in range(S.shape[0]):
+            if is_acceptable():
+                if s_distance < a_distance:
+                    a_idx = s_idx
+
+        if a_idx is None:
+            a_idx = np.random.randint(0, S.shape[0])
+
+        if V[a_idx] != y[t_idx]:
+            S = np.vstack((S, X[t_idx, :]))
+
+        indices_to_remove = []
+        for s_idx in range(S.shape[0]):
+            if s_distance <= a_distance:
+                # TODO: Update class record
+                if is_significantly_poor():
+                    indices_to_remove.append(s_idx)
+        S = np.delete(S, indices_to_remove, axis=0)
+
+    indices_to_remove = []
+    for s_idx in range(S.shape[0]):
+        if not is_acceptable():
+            indices_to_remove.append(s_idx)
+    S = np.delete(S, indices_to_remove, axis=0)
+
+    return S, y
 
 
 def __drop1_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
