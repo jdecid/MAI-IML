@@ -82,6 +82,7 @@ def visualize_all(dataset: str):
         ax[0].set_ylabel('Accuracy')
 
         ax[1].scatter(kr, times, s=10, c=color_from_rp(result['rp']), marker=marker_from_vp(result['vp']))
+        ax[1].set_ylim(0,30)
         #ax[1].set_title('Execution Times')
         #ax[1].set_xlabel('k and r')
         ax[1].set_ylabel('Execution time in seconds')
