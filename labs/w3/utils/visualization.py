@@ -17,7 +17,6 @@ def color_from_rp(rp):
         color = '#000000'
     return color
 
-
 def marker_from_vp(vp):
     marker = '*'
     if vp == 'MVS':
@@ -32,6 +31,7 @@ def visualize(dataset: str):
 
     with open(os.path.join('../output', f'{dataset}_results.json'), mode='r') as f:
         data = json.loads(f.read())
+
     dataset_name = 'Hypothyroid'
     if dataset == 'pen-based':
         dataset_name = 'Pen-Based'
@@ -62,6 +62,7 @@ def visualize_all(dataset: str):
 
     with open(os.path.join('../output', f'{dataset}_results.json'), mode='r') as f:
         data = json.loads(f.read())
+
     dataset_name = 'Hypothyroid'
     if dataset == 'pen-based':
         dataset_name = 'Pen-Based'

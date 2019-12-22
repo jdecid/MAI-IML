@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import numpy as np
 
@@ -33,10 +33,9 @@ class KIBLAlgorithm:
         self.classes = len(set(y))
         return self
 
-    def k_neighbours(self, X: np.ndarray, y: int = None, only_winner=True) -> List[int]:
-        distances = self.__distance_function(self.X, X, self.r)
-        # distances = list(enumerate(distances))
-        # distances = list(map(lambda x: KIBLAlgorithm.__distance_function(x, X), self.X))
+    def k_neighbours(self, X: np.ndarray, y: int = None, only_winner=True, return_distances=False) \
+            -> Union[List[int], List[Tuple[int, float]]]:
+        distances = self.distance_function(self.X, X, self.r)
         k_nearest_idx = np.argsort(distances)[:self.K]
         y_pred = self.__vote(self.y[k_nearest_idx])
 
@@ -45,7 +44,10 @@ class KIBLAlgorithm:
         if only_winner:
             return y_pred
         else:
-            return k_nearest_idx
+            if return_distances:
+                return list(zip(k_nearest_idx, distances[k_nearest_idx]))
+            else:
+                return k_nearest_idx
 
     def __vote(self, k_most_similar: List[Tuple[int]]):
         counter = Counter(k_most_similar)
@@ -78,6 +80,5 @@ class KIBLAlgorithm:
                 self.y = np.concatenate((self.y, [y]))
 
     @staticmethod
-    def __distance_function(u: np.ndarray, v: np.ndarray, r: int):
+    def distance_function(u: np.ndarray, v: np.ndarray, r: int):
         return np.linalg.norm(u - v, axis=1, ord=r)
-        # return minkowski(u, v, r)
