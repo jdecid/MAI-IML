@@ -6,7 +6,6 @@ def preprocess(train_dataset, validation_dataset):
     train_data = train_dataset['data']
     val_data = validation_dataset['data']
 
-    # TODO: Remove sample
     df_train = pd.DataFrame(train_data)
     column_names = df_train.columns[:-1]
 
