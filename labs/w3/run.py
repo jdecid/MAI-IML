@@ -167,7 +167,7 @@ def eval_stat_test(mat, results, test, alpha=0.05):
                 if p_value < alpha:  # significant
                     if statistic > 0:  # second is better
                         mean_acc1 = np.mean(list(map(lambda x: x['accuracy'], results[i]['results'])))
-                        mean_acc2 =np.mean(list(map(lambda x: x['accuracy'], results[j]['results'])))
+                        mean_acc2 = np.mean(list(map(lambda x: x['accuracy'], results[j]['results'])))
                         if mean_acc1 > mean_acc2:  # first is better
                             select_mat[i][j] = 1
                         elif mean_acc1 < mean_acc2:  # second is better
@@ -200,13 +200,13 @@ def combine_test(select_mat_acc, select_mat_time):
     combine_mat = np.zeros(select_mat_acc.shape)
     for i in range(select_mat_acc.shape[0]):
         for j in range(select_mat_acc.shape[1]):
-            if select_mat_acc[i,j] == 1:
-                combine_mat[i,j] = 1
-            elif select_mat_acc[i,j] == 2:
+            if select_mat_acc[i, j] == 1:
+                combine_mat[i, j] = 1
+            elif select_mat_acc[i, j] == 2:
                 combine_mat[i, j] = 2
-            elif select_mat_time[i,j] == 1:
+            elif select_mat_time[i, j] == 1:
                 combine_mat[i, j] = 2
-            elif select_mat_time[i,j] == 2:
+            elif select_mat_time[i, j] == 2:
                 combine_mat[i, j] = 1
     return combine_mat
 
@@ -244,9 +244,7 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
     select_mat_acc = eval_stat_test(stats_accuracy, results, test=test)
     select_mat_time = eval_stat_test(stats_time, results, test=test)
 
-
     combine_mat = combine_test(select_mat_acc, select_mat_time)
-
 
     plt.matshow(select_mat_acc)
     plt.colorbar()
@@ -262,16 +260,15 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
     plt.show()
 
     N = select_mat_acc.shape[0]
-    threshold = N/2 + 1.96*sqrt(N)/2
+    threshold = N / 2 + 1.96 * sqrt(N) / 2
     best_accuracy_idx = np.argwhere(np.sum(select_mat_acc < 2, axis=1) >= threshold).flatten()
     print('Best indexes according to accuracy', best_accuracy_idx)
     print('Best indexes according to efficiency to break ties', np.argwhere(
         np.sum(select_mat_time[best_accuracy_idx] != 1,
                axis=0) >= threshold).flatten()
           )
-    #print('Best index', np.argmax(np.sum(select_mat_acc == 1, axis=0)), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
-    #print('Best index', np.argwhere(np.amax(np.sum(combine_mat == 2, axis=0)) == (np.sum(combine_mat == 1, axis=0))), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
-
+    # print('Best index', np.argmax(np.sum(select_mat_acc == 1, axis=0)), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
+    # print('Best index', np.argwhere(np.amax(np.sum(combine_mat == 2, axis=0)) == (np.sum(combine_mat == 1, axis=0))), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
 
 
 def run_reduction_kIBL_fold(fold, method, config, seed, i=None, lock=None):
@@ -289,8 +286,8 @@ def run_reduction_kIBL_fold(fold, method, config, seed, i=None, lock=None):
 
 
 def run_reduction_kIBL(folds, seed, par):
-    config = {'K': 3}
-    for i_experiment, method in enumerate(REDUCTION_METHODS[2:3]):
+    config = {'K': 1, 'r': 1}
+    for i_experiment, method in enumerate(REDUCTION_METHODS[:2]):
         print('-' * 150)
         print(f'> Running experiment ({i_experiment + 1}/{len(REDUCTION_METHODS)}): {method}' + ' ' * 100)
 
@@ -339,7 +336,8 @@ if __name__ == '__main__':
         data = read_data(args.dataset)
         run_kIBL(folds=data, name=args.dataset, seed=args.seed, par=args.par)
     elif args.algorithm == 'stat':
-        run_stat_select_kIBL(kIBL_json_path=os.path.join('output', f'{args.dataset}_results.json'), name=args.dataset, test='ttest')
+        run_stat_select_kIBL(kIBL_json_path=os.path.join('output', f'{args.dataset}_results.json'), name=args.dataset,
+                             test='ttest')
     else:
         data = read_data(args.dataset)
         run_reduction_kIBL(folds=data, seed=args.seed, par=args.par)
