@@ -27,11 +27,11 @@ class KIBLAlgorithm:
 
         self.classes = 0
 
-    def fit(self, X, y):
+    def fit(self, X, y) -> 'KIBLAlgorithm':
         self.X = X
         self.y = y
-
         self.classes = len(set(y))
+        return self
 
     def k_neighbours(self, X: np.ndarray, y: int = None) -> List[int]:
         distances = self.__distance_function(self.X, X, self.r)
