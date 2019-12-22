@@ -119,6 +119,7 @@ def run_kIBL(folds, name, seed, par):
 
                     results.append({
                         'k': k,
+                        'r': r,
                         'vp': voting_policy,
                         'rp': retention_policy,
                         'results': fold_results
