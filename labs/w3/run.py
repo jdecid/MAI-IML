@@ -20,6 +20,8 @@ from preprocessing.pen_based import preprocess as preprocess_penn
 from utils.dataset import read_dataset
 from utils.exceptions import TestMethodException
 
+import matplotlib.pyplot as plt
+
 OUTPUT_PATH = 'output'
 
 K_VALUES = [1, 3, 5, 7]
@@ -161,8 +163,8 @@ def eval_stat_test(mat, results, test, alpha=0.05):
                 p_value = mat[i][j][1]
                 if p_value < alpha:  # significant
                     if statistic > 0:  # second is better
-                        mean_acc1 = np.mean(results[i]['results']['accuracy'])
-                        mean_acc2 = np.mean(results[j]['results']['accuracy'])
+                        mean_acc1 = np.mean(list(map(lambda x: x['accuracy'], results[i]['results'])))
+                        mean_acc2 =np.mean(list(map(lambda x: x['accuracy'], results[j]['results'])))
                         if mean_acc1 > mean_acc2:  # first is better
                             select_mat[i][j] = 1
                         elif mean_acc1 < mean_acc2:  # second is better
@@ -189,6 +191,21 @@ def eval_stat_test(mat, results, test, alpha=0.05):
                 else:  # tie
                     select_mat[i][j] = 0
     return select_mat
+
+
+def combine_test(select_mat_acc, select_mat_time):
+    combine_mat = np.zeros(select_mat_acc.shape)
+    for i in range(select_mat_acc.shape[0]):
+        for j in range(select_mat_acc.shape[1]):
+            if select_mat_acc[i,j] == 1:
+                combine_mat[i,j] = 1
+            elif select_mat_acc[i,j] == 2:
+                combine_mat[i, j] = 2
+            elif select_mat_time[i,j] == 1:
+                combine_mat[i, j] = 2
+            elif select_mat_time[i,j] == 2:
+                combine_mat[i, j] = 1
+    return combine_mat
 
 
 def run_stat_select_kIBL(kIBL_json_path, name, test):
@@ -223,6 +240,27 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
 
     select_mat_acc = eval_stat_test(stats_accuracy, results, test=test)
     select_mat_time = eval_stat_test(stats_time, results, test=test)
+
+
+    combine_mat = combine_test(select_mat_acc, select_mat_time)
+
+
+    plt.matshow(select_mat_acc)
+    plt.colorbar()
+    plt.show()
+    plt.show()
+
+    plt.matshow(select_mat_time)
+    plt.colorbar()
+    plt.show()
+
+    plt.matshow(combine_mat)
+    plt.colorbar()
+    plt.show()
+
+    print('Best index', np.argmax(np.sum(combine_mat == 2, axis=0)), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
+    #print('Best index', np.argwhere(np.amax(np.sum(combine_mat == 2, axis=0)) == (np.sum(combine_mat == 1, axis=0))), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
+
 
 
 def run_reduction_kIBL_fold(fold, method, config, seed, i=None, lock=None):
@@ -284,7 +322,7 @@ if __name__ == '__main__':
         data = read_data(args.dataset)
         run_kIBL(folds=data, name=args.dataset, seed=args.seed, par=args.par)
     elif args.algorithm == 'stat':
-        run_stat_select_kIBL(kIBL_json_path=os.path.join('output', f'{args.dataset}_results.json'), name=args.dataset)
+        run_stat_select_kIBL(kIBL_json_path=os.path.join('output', f'{args.dataset}_results.json'), name=args.dataset, test='ttest')
     else:
         data = read_data(args.dataset)
         run_reduction_kIBL(folds=data, seed=args.seed, par=args.par)
