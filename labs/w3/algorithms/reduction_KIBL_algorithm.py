@@ -22,19 +22,18 @@ def __cnn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[n
     V = np.array(V)
 
     while True:
+        knn.fit(np.array(U), np.array(V))
         for i in range(X.shape[1]):
-            knn.fit(np.array(U), np.array(V))
             pred = knn.k_neighbours(X[i, :], y[i])
             if pred != y[i]:
+                U = np.vstack((U, X[i, :]))
+                V = np.concatenate((V, [y[i]]))
+                X = np.delete(X, i, axis=0)
                 break
         else:
-            U = np.vstack((U, X[i, :]))
-            V = np.concatenate((V, y[i]))
-            X = np.delete(X, i, axis=0)
-            continue
-        break
+            break
 
-    return np.stack(U), np.array(V)
+    return U, V
 
 
 def __renn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -42,18 +41,17 @@ def __renn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[
     V = y.copy()
 
     while True:
+        knn.fit(U, V)
         for i in range(U.shape[1]):
-            knn.fit(U, V)
             pred = knn.k_neighbours(U[i, :], V[i])
             if pred != y[i]:
+                U = np.delete(U, i, axis=0)
+                V = np.delete(V, i, axis=0)
                 break
         else:
-            U = np.delete(U, i, axis=0)
-            V = np.delete(V, i, axis=0)
-            continue
-        break
+            break
 
-    return np.stack(U), np.array(V)
+    return U, V
 
 
 def reduction_KIBL_algorithm(config: dict, X: np.ndarray, y: np.ndarray, reduction_method: str, seed: int):

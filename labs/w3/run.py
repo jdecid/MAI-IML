@@ -228,6 +228,9 @@ def run_reduction_kIBL_fold(fold, method, config, seed, i=None, lock=None):
     reduced_fold = deepcopy(fold)
     reduced_fold['X_train'], reduced_fold['y_train'] = \
         reduction_KIBL_algorithm(config, fold['X_train'], fold['y_train'], method, seed)
+
+    print(f'Train fold reduced from {len(fold["X_train"])} to {len(reduced_fold["X_train"])} instances')
+
     return run_knn_fold(reduced_fold, config, seed, i, lock)
 
 

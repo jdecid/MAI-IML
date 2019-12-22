@@ -52,7 +52,7 @@ class KIBLAlgorithm:
             return most_common[np.random.randint(len(most_common))]
         else:
             if len(most_common) > 1:
-                return self.__vote(k_most_similar[:-self.K])
+                return self.__vote(k_most_similar[:-1])
             else:
                 return most_common[0]
 
