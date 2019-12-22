@@ -33,7 +33,7 @@ class KIBLAlgorithm:
         self.classes = len(set(y))
         return self
 
-    def k_neighbours(self, X: np.ndarray, y: int = None) -> List[int]:
+    def k_neighbours(self, X: np.ndarray, y: int = None, only_winner=True) -> List[int]:
         distances = self.__distance_function(self.X, X, self.r)
         # distances = list(enumerate(distances))
         # distances = list(map(lambda x: KIBLAlgorithm.__distance_function(x, X), self.X))
@@ -42,7 +42,10 @@ class KIBLAlgorithm:
 
         self.__apply_retention_policy(X, y, y_pred, self.y[k_nearest_idx])
 
-        return y_pred
+        if only_winner:
+            return y_pred
+        else:
+            return k_nearest_idx
 
     def __vote(self, k_most_similar: List[Tuple[int]]):
         counter = Counter(k_most_similar)

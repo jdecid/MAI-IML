@@ -68,12 +68,16 @@ def __renn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[
 
 
 def __ib3_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    U = X.copy()
-    V = y.copy()
+    def is_acceptable(p, z, n):
+        left = p + z * z / 2 * n
+        right = z * np.sqrt(p * (1 - p) / n + z * z / 4 * n * n)
+        bottom = 1 + z ** 2 / n
+        return (left + right) / bottom, (left - right) / bottom
+
+    S = []
 
     for i in range(X.shape[0]):
         pass
-
     return U, V
 
 
