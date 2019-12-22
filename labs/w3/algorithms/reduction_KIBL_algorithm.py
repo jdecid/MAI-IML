@@ -81,6 +81,52 @@ def __ib3_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[n
     return U, V
 
 
+def __drop1_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    T = list(range(X.shape[0]))
+    S = T.copy()
+    knn_ = knn.fit(X, y)
+    knn.K += 1
+    kplus1nn = knn.fit(X, y)
+    associates = {}
+    for P in S:
+        neighbours = kplus1nn.k_neighbours(X[P], only_winner=False)
+        for ne in neighbours:
+            if ne in associates:
+                associates[ne].add(P)
+            else:
+                associates[ne] = {P}
+
+    for P in S:
+        A = associates[P]
+        knn_with = knn_.fit(X[S], y[S])
+        S_without = S.copy()
+        del S_without[S_without.index(P)]
+        knn_without = knn_.fit(X[S_without], y[S_without])
+        with_ = 0
+        without = 0
+        for a in A:
+            pred_knn_with = knn_with.k_neighbours(X[a])
+            if pred_knn_with == y[a]:
+                with_ += 1
+            pred_knn_without = knn_without.k_neighbours(X[a])
+            if pred_knn_without == y[a]:
+                without += 1
+        if with_ > without:
+            del S[S.index(P)]
+            for a in A:
+                associates[a].remove(P)
+                kplus1nn = knn.fit(X[S], y[S])
+                a_neighbours = kplus1nn.k_neighbours(X[a], only_winner=False)
+                for ne in a_neighbours:
+                    if ne not in associates[a]:
+                        associates[a].add(ne)
+                P_neighbours = kplus1nn.k_neighbours(X[P], only_winner=False)
+                for ne in P_neighbours:
+                    associates[ne].remove(P)
+
+    return X[S], y[S]
+
+
 def reduction_KIBL_algorithm(config: dict, X: np.ndarray, y: np.ndarray, reduction_method: str, seed: int):
     if reduction_method not in REDUCTION_METHODS:
         raise ValueError(f'Unknown reduction method {reduction_KIBL_algorithm()}')
