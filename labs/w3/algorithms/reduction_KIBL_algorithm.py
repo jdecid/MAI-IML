@@ -56,9 +56,13 @@ def __renn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[
     return np.stack(U), np.array(V)
 
 
-def reduction_KIBL_algorithm(alg: KIBLAlgorithm, X: np.ndarray, y: np.ndarray, reduction_method: str):
+def reduction_KIBL_algorithm(config: dict, X: np.ndarray, y: np.ndarray, reduction_method: str, seed: int):
     if reduction_method not in REDUCTION_METHODS:
         raise ValueError(f'Unknown reduction method {reduction_KIBL_algorithm()}')
+
+    np.random.seed(seed)
+
+    alg = KIBLAlgorithm(**config)
 
     if reduction_method == 'CNN':
         return __cnn_reduction(alg, X, y)

@@ -132,7 +132,7 @@ def run_kIBL(folds, name, seed, par):
 def compute_stat_test(sample1, sample2, test):
     if test not in TEST_METHODS:
         raise TestMethodException()
-    
+
     if test == 'anova':
         raise NotImplementedError
     elif test == 'wilcoxon':
@@ -224,17 +224,16 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
     select_mat_time = eval_stat_test(stats_time, results, test=test)
 
 
-def run_reduction_kIBL_fold(fold, method, alg, seed, i=None, lock=None):
-    np.random.seed(seed)
+def run_reduction_kIBL_fold(fold, method, config, seed, i=None, lock=None):
     reduced_fold = deepcopy(fold)
     reduced_fold['X_train'], reduced_fold['y_train'] = \
-        reduction_KIBL_algorithm(alg, fold['X_train'], fold['y_train'], method)
-    return run_knn_fold(reduced_fold, alg, seed, i, lock)
+        reduction_KIBL_algorithm(config, fold['X_train'], fold['y_train'], method, seed)
+    return run_knn_fold(reduced_fold, config, seed, i, lock)
 
 
 def run_reduction_kIBL(folds, seed, par):
     config = {'K': 3}
-    for i_experiment, method in enumerate(REDUCTION_METHODS):
+    for i_experiment, method in enumerate(REDUCTION_METHODS[:2]):
         print('-' * 150)
         print(f'> Running experiment ({i_experiment + 1}/{len(REDUCTION_METHODS)}): {method}' + ' ' * 100)
 
