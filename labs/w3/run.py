@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import multiprocessing
 import os
 import pickle
@@ -279,7 +280,7 @@ def run_reduction_kIBL_fold(fold, method, config, seed, i=None, lock=None):
 
 def run_reduction_kIBL(folds, seed, par):
     config = {'K': 3}
-    for i_experiment, method in enumerate(REDUCTION_METHODS[:2]):
+    for i_experiment, method in enumerate(REDUCTION_METHODS[3:4]):
         print('-' * 150)
         print(f'> Running experiment ({i_experiment + 1}/{len(REDUCTION_METHODS)}): {method}' + ' ' * 100)
 
@@ -314,6 +315,12 @@ if __name__ == '__main__':
                         const=True, default=False, nargs='?')
 
     args = parser.parse_args()
+
+    logging.getLogger().setLevel(logging.DEBUG)
+    logging.basicConfig(filename=os.path.join('output', 'log.txt'),
+                        filemode='w',
+                        format='%(message)s',
+                        level=logging.DEBUG)
 
     if not os.path.exists(OUTPUT_PATH):
         os.makedirs(OUTPUT_PATH)

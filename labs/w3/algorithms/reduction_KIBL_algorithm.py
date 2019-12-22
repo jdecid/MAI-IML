@@ -1,49 +1,12 @@
-from typing import Tuple
+from typing import Tuple, List, Set
 
 import numpy as np
+import logging
 
 from algorithms.KIBLAlgorithm import KIBLAlgorithm
+from algorithms.reduction.cnn import __cnn_reduction
 
-REDUCTION_METHODS = ['CNN', 'RENN', 'IB3', 'DROP2', 'DROP3']
-
-
-def __cnn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    U, V = [], []
-
-    # Random initialization with one random element for each different class
-    for label in set(y):
-        i = np.random.choice(np.argwhere(y == label).reshape(-1))
-        # Add to new sets
-        U.append(X[i, :])
-        V.append(y[i])
-        # Remove from new sets
-        X = np.delete(X, i, axis=0)
-        y = np.delete(y, i)
-
-    U = np.array(U)
-    V = np.array(V)
-    knn.fit(U, V)
-
-    while True:
-        indices_to_remove = []
-        for i in range(X.shape[0]):
-            pred = knn.k_neighbours(X[i, :], y[i])
-            if pred != y[i]:
-                indices_to_remove.append(i)
-
-        if len(indices_to_remove):
-            # Update U and V if prediction is wrong and fit the model
-            U = np.vstack((U, X[indices_to_remove, :]))
-            V = np.concatenate((V, y[indices_to_remove]))
-            knn.fit(U, V)
-
-            # Remove instance from X
-            X = np.delete(X, indices_to_remove, axis=0)
-            y = np.delete(y, indices_to_remove)
-        else:
-            break
-
-    return U, V
+REDUCTION_METHODS = ['CNN', 'RENN', 'IB3', 'DROP1', 'DROP2']
 
 
 def __renn_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -84,12 +47,15 @@ def __ib3_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[n
     def is_significantly_poor():
         return
 
+    # Initialize S empty (We put the first value of X).
     S = np.empty(shape=(1, X.shape[1]))
     S[0, :] = X[0, :]
     V = np.array([y[0]])
     classification_record = {}
 
+    # For each instance in X (Skip the already added first one).
     for t_idx in range(1, X.shape[0]):
+
         a_idx = None
         a_distance = np.inf
         for s_idx in range(S.shape[0]):
@@ -123,50 +89,65 @@ def __ib3_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[n
     return S, y
 
 
-def __drop1_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    T = list(range(X.shape[0]))
-    S = T.copy()
-    knn_ = knn.fit(X, y)
-    knn.K += 1
-    kplus1nn = knn.fit(X, y)
-    associates = {}
-    for P in S:
-        neighbours = kplus1nn.k_neighbours(X[P], only_winner=False)
-        for ne in neighbours:
-            if ne in associates:
-                associates[ne].add(P)
-            else:
-                associates[ne] = {P}
+def __drop1_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray, v2=False) -> Tuple[np.ndarray, np.ndarray]:
+    S = X.copy()
+    V = y.copy()
 
-    for P in S:
-        A = associates[P]
-        knn_with = knn_.fit(X[S], y[S])
-        S_without = S.copy()
-        del S_without[S_without.index(P)]
-        knn_without = knn_.fit(X[S_without], y[S_without])
-        with_ = 0
-        without = 0
-        for a in A:
-            pred_knn_with = knn_with.k_neighbours(X[a])
-            if pred_knn_with == y[a]:
-                with_ += 1
-            pred_knn_without = knn_without.k_neighbours(X[a])
-            if pred_knn_without == y[a]:
-                without += 1
-        if with_ > without:
-            del S[S.index(P)]
-            for a in A:
-                associates[a].remove(P)
-                kplus1nn = knn.fit(X[S], y[S])
-                a_neighbours = kplus1nn.k_neighbours(X[a], only_winner=False)
-                for ne in a_neighbours:
-                    if ne not in associates[a]:
-                        associates[a].add(ne)
-                P_neighbours = kplus1nn.k_neighbours(X[P], only_winner=False)
-                for ne in P_neighbours:
-                    associates[ne].remove(P)
+    associates: List[Set[int]] = [set() for _ in range(S.shape[0])]
+    neighbours = [[] for _ in range(S.shape[0])]
 
-    return X[S], y[S]
+    knn_1 = KIBLAlgorithm(K=knn.K + 1, voting_policy=knn.voting_policy, retention_policy=knn.retention_policy, r=knn.r)
+    knn_1.fit(S, V)
+
+    for p_idx in range(S.shape[0]):
+        # Find the k + 1 nearest neighbors of p in S.
+        neighbours[p_idx] = knn_1.k_neighbours(S[p_idx, :], V[p_idx], only_winner=False)
+        logging.debug(f'Instance {p_idx} neighbours -> {neighbours[p_idx]}')
+
+        # Add p to each of its neighbors’ lists of associates.
+        for n_idx in neighbours[p_idx]:
+            associates[n_idx].add(p_idx)
+            logging.debug(f'- Associates of {n_idx} -> {associates[n_idx]}')
+
+    knn_1 = KIBLAlgorithm(K=1, voting_policy=knn_1.voting_policy, retention_policy=knn_1.retention_policy, r=knn_1.r)
+    knn_1.fit(S, V)
+
+    p_idx = 0
+    p_idx_original = 0
+    while p_idx < S.shape[0]:
+        # Num. of associates of p classified correctly with p as a neighbour.
+        knn.fit(S, V)
+        d_with = sum(map(lambda x: y[x] == knn.k_neighbours(S[x], V[x]), associates[p_idx]))
+        # Num. of associates of p classified correctly without p as a neighbour.
+        knn.fit(np.delete(S, p_idx, axis=0), np.delete(V, p_idx))
+        d_without = sum(map(lambda x: y[x] == knn.k_neighbours(S[x], V[x]), associates[p_idx]))
+
+        logging.debug(f'For instance {p_idx}: with={d_with} and without={d_without}')
+
+        if d_without > d_with:
+            S = np.delete(S, p_idx, axis=0)
+            V = np.delete(V, p_idx, axis=0)
+            knn_1.fit(S, V)
+
+            for a_idx in associates[p_idx_original] - {p_idx_original}:
+                # Remove p from a’s list of nearest neighbors.
+                associates[a_idx] -= {p_idx_original}
+
+                # Find a new nearest neighbor for A.
+                a_nn = knn_1.k_neighbours(S[a_idx, :], V[a_idx], only_winner=False)
+
+                # Add A to its new neighbor’s list of associates
+                associates[a_nn[0]] = a_idx
+
+            # For each neighbor of p, remove p from its lists of associates.
+            for n_idx in neighbours[p_idx_original]:
+                associates[n_idx] -= {p_idx_original}
+        else:
+            p_idx += 1
+        p_idx_original += 1
+
+    return S, V
+
 
 
 def reduction_KIBL_algorithm(config: dict, X: np.ndarray, y: np.ndarray, reduction_method: str, seed: int):
@@ -184,3 +165,7 @@ def reduction_KIBL_algorithm(config: dict, X: np.ndarray, y: np.ndarray, reducti
         return __renn_reduction(alg, X, y)
     elif reduction_method == 'IB3':
         return __ib3_reduction(alg, X, y)
+    elif reduction_method == 'DROP1':
+        return __drop1_reduction(alg, X, y)
+    elif reduction_method == 'DROP2':
+        return __drop1_reduction(alg, X, y, v2=True)
