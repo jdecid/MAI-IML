@@ -21,6 +21,8 @@ from preprocessing.pen_based import preprocess as preprocess_penn
 from utils.dataset import read_dataset
 from utils.exceptions import TestMethodException
 
+import matplotlib.patches as mpatches
+
 from math import sqrt
 
 import matplotlib.pyplot as plt
@@ -245,21 +247,34 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
     select_mat_time = eval_stat_test(stats_time, results, test=test)
 
 
-    combine_mat = combine_test(select_mat_acc, select_mat_time)
+    #combine_mat = combine_test(select_mat_acc, select_mat_time)
 
+    i_patch = mpatches.Patch(color='turquoise', label='i wins')
+    j_patch = mpatches.Patch(color='yellow', label='j wins')
+    tie_patch = mpatches.Patch(color='purple', label='tie/no significant')
 
     plt.matshow(select_mat_acc)
-    plt.colorbar()
-    plt.show()
-    plt.show()
 
+    plt.xticks(list(range(0, 96, 5)))
+    plt.yticks(list(range(0, 96, 5)))
+
+    plt.figlegend(handles=[i_patch, j_patch, tie_patch], loc='lower right')
+    plt.title(name.upper() + ' accuracy paired t-tests')
+    plt.savefig(os.path.join('output', name.upper() + '_accuracy_t-tests'))
+
+    j_patch = mpatches.Patch(color='turquoise', label='i wins')
+    i_patch = mpatches.Patch(color='yellow', label='j wins')
+    tie_patch = mpatches.Patch(color='purple', label='tie/no significant')
     plt.matshow(select_mat_time)
-    plt.colorbar()
-    plt.show()
+    plt.xticks(list(range(0, 96, 5)))
+    plt.yticks(list(range(0, 96, 5)))
+    plt.figlegend(handles=[i_patch, j_patch, tie_patch], loc='lower right')
+    plt.title(name.upper() + ' execution time paired t-tests')
+    plt.savefig(os.path.join('output', name.upper() + '_execution_t-tests'))
 
-    plt.matshow(combine_mat)
-    plt.colorbar()
-    plt.show()
+    #plt.matshow(combine_mat)
+    #plt.colorbar()
+    #plt.show()
 
     N = select_mat_acc.shape[0]
     threshold = N/2 + 1.96*sqrt(N)/2
@@ -267,7 +282,7 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
     print('Best indexes according to accuracy', best_accuracy_idx)
     print('Best indexes according to efficiency to break ties', np.argwhere(
         np.sum(select_mat_time[best_accuracy_idx] != 1,
-               axis=0) >= threshold).flatten()
+               axis=1) >= threshold).flatten()
           )
     #print('Best index', np.argmax(np.sum(select_mat_acc == 1, axis=0)), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
     #print('Best index', np.argwhere(np.amax(np.sum(combine_mat == 2, axis=0)) == (np.sum(combine_mat == 1, axis=0))), 'with', np.max(np.sum(combine_mat == 1, axis=0)), 'wins')
