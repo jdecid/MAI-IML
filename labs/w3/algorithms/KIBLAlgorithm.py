@@ -80,5 +80,5 @@ class KIBLAlgorithm:
                 self.y = np.concatenate((self.y, [y]))
 
     @staticmethod
-    def distance_function(u: np.ndarray, v: np.ndarray, r: int):
-        return np.linalg.norm(u - v, axis=1, ord=r)
+    def distance_function(u: np.ndarray, v: np.ndarray, r: int, axis=1):
+        return np.linalg.norm(u - v, axis=axis, ord=r)
