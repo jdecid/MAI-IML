@@ -12,7 +12,7 @@ def __drop1_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray, v2=False
     S = list(range(X.shape[0]))
 
     associates: List[Set[int]] = [set() for _ in range(X.shape[0])]
-    #neighbours = [[] for _ in range(S.shape[0])]
+    # neighbours = [[] for _ in range(S.shape[0])]
 
     knn_1 = KIBLAlgorithm(K=knn.K + 1, voting_policy=knn.voting_policy, retention_policy=knn.retention_policy, r=knn.r)
     knn_1.fit(X, y)
@@ -55,7 +55,8 @@ def __drop1_reduction(knn: KIBLAlgorithm, X: np.ndarray, y: np.ndarray, v2=False
 
         if d_without >= d_with:
             S = S_
-            #knn_1.fit(S, V)
+            if v2:
+                knn_1.fit(X, y)
 
             for a_idx in associates[p_idx_original] - {p_idx_original}:
                 # Remove p from a’s list of nearest neighbors.
