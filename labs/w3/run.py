@@ -208,7 +208,7 @@ def combine_test(select_mat_acc, select_mat_time):
                 combine_mat[i, j] = 2
             elif select_mat_time[i, j] == 1:
                 combine_mat[i, j] = 2
-            elif select_mat_time[i,j] == 2:
+            elif select_mat_time[i, j] == 2:
                 combine_mat[i, j] = 1
     return combine_mat
 
@@ -246,8 +246,7 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
     select_mat_acc = eval_stat_test(stats_accuracy, results, test=test)
     select_mat_time = eval_stat_test(stats_time, results, test=test)
 
-
-    #combine_mat = combine_test(select_mat_acc, select_mat_time)
+    # combine_mat = combine_test(select_mat_acc, select_mat_time)
 
     i_patch = mpatches.Patch(color='turquoise', label='i wins')
     j_patch = mpatches.Patch(color='yellow', label='j wins')
@@ -272,9 +271,9 @@ def run_stat_select_kIBL(kIBL_json_path, name, test):
     plt.title(name.upper() + ' execution time paired t-tests')
     plt.savefig(os.path.join('output', name.upper() + '_execution_t-tests'))
 
-    #plt.matshow(combine_mat)
-    #plt.colorbar()
-    #plt.show()
+    # plt.matshow(combine_mat)
+    # plt.colorbar()
+    # plt.show()
 
     N = select_mat_acc.shape[0]
     threshold = N / 2 + 1.96 * sqrt(N) / 2
@@ -299,12 +298,16 @@ def run_reduction_kIBL_fold(fold, method, config, seed, i=None, lock=None):
     print(f'Train fold reduced from {len(fold["X_train"])} to {len(reduced_fold["X_train"])} instances '
           f'(elapsed time {time() - time_start:.5f}s)')
 
-    return run_knn_fold(reduced_fold, config, seed, i, lock)
+    result = run_knn_fold(reduced_fold, config, seed, i, lock)
+    result[1]['new_dim'] = reduced_fold['X_train'].shape[0]
+    result[1]['old_dim'] = fold['X_train'].shape[0]
+    return result
 
 
-def run_reduction_kIBL(folds, seed, par):
-    config = {'K': 3}
-    for i_experiment, method in enumerate(REDUCTION_METHODS[3:4]):
+def run_reduction_kIBL(folds, name, seed, par):
+    config = {'K': 1, 'r': 1}
+    results = []
+    for i_experiment, method in enumerate(REDUCTION_METHODS[:2]):
         print('-' * 150)
         print(f'> Running experiment ({i_experiment + 1}/{len(REDUCTION_METHODS)}): {method}' + ' ' * 100)
 
@@ -324,7 +327,16 @@ def run_reduction_kIBL(folds, seed, par):
             fold_results = [fold_results[f] for f in range(len(folds))]
         else:
             fold_results = list(
-                map(lambda x: run_reduction_kIBL_fold(x[1], method, config, seed, x[0]), enumerate(folds)))
+                map(lambda x: run_reduction_kIBL_fold(x[1], method, config, seed, x[0])[1], enumerate(folds)))
+
+        results.append({
+            'method': method,
+            'results': fold_results
+        })
+
+    results_json = json.dumps(results)
+    with open(os.path.join(OUTPUT_PATH, name + '_reduction.json'), mode='w') as f:
+        f.write(results_json)
 
 
 if __name__ == '__main__':
@@ -357,4 +369,4 @@ if __name__ == '__main__':
                              test='ttest')
     else:
         data = read_data(args.dataset)
-        run_reduction_kIBL(folds=data, seed=args.seed, par=args.par)
+        run_reduction_kIBL(folds=data, name=args.dataset, seed=args.seed, par=args.par)
