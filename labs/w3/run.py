@@ -305,9 +305,9 @@ def run_reduction_kIBL_fold(fold, method, config, seed, i=None, lock=None):
 
 
 def run_reduction_kIBL(folds, name, seed, par):
-    config = {'K': 1, 'r': 1}
+    config = {'K': 5, 'r': 1}
     results = []
-    for i_experiment, method in enumerate(REDUCTION_METHODS[:2]):
+    for i_experiment, method in enumerate(REDUCTION_METHODS):
         print('-' * 150)
         print(f'> Running experiment ({i_experiment + 1}/{len(REDUCTION_METHODS)}): {method}' + ' ' * 100)
 
